@@ -937,5 +937,15 @@ window.addEventListener('load', () => {
   if (d) d.addEventListener('click', downloadGameFile);
 });
 </script>
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
+  const SUPABASE_URL = 'https://pzrhgekqxaacmawqhxxf.supabase.co'
+  const SUPABASE_KEY = 'sb_publishable_fDFHYtswH0r0XnPCyVjZoA_r3wh5hj6'
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+  window.supabaseClient = supabase
+
+  console.log('Supabase connecté')
+</script>
 </body></html>
