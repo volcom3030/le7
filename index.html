@@ -1012,7 +1012,7 @@ window.addEventListener('load', () => {
 
     const { error: gameError } = await supabase
       .from('games')
-      .insert({
+      .upsert({
         room_id: roomId,
         host_id: playerId,
         started: false,
@@ -1026,7 +1026,7 @@ window.addEventListener('load', () => {
 
     const { error: playerError } = await supabase
       .from('players')
-      .insert({
+      .upsert({
         id: playerId,
         room_id: roomId,
         name: playerName,
