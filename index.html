@@ -316,7 +316,7 @@ button, input { font: inherit; }
   <div class="actions">
     <button type="button" class="primary-btn" id="onlineStartBtn">Commencer en ligne</button>
     <button type="button" class="secondary-btn" onclick="leaveRoom()">Quitter le salon</button>
-    <button type="button" class="secondary-btn" onclick="goToMenuScreen()">Retour au menu</button>
+    <button type="button" class="secondary-btn" onclick="returnToMenuFromOnline()">Retour au menu</button>
   </div>
 
   <div id="onlineGameArea" style="width:min(980px,100%); margin-top:14px;"></div>
@@ -1297,6 +1297,13 @@ function closeVictoryOverlay() {
   if (overlay) overlay.classList.remove('show')
 }
 
+function returnToMenuFromOnline() {
+  stopRoomPolling()
+  closeVictoryOverlay()
+  sessionStorage.setItem('le7_room_paused', '1')
+  if (window.goToMenuScreen) window.goToMenuScreen()
+}
+
 function showVictoryOverlay(state) {
   const game = state?.onlineGame
   if (!game || !game.finalWinnerIds?.length) return
@@ -1732,7 +1739,8 @@ function startRoomPolling(roomId) {
 
   roomRefreshInterval = setInterval(async () => {
     const currentRoomId = sessionStorage.getItem('le7_room_id')
-    if (!currentRoomId) return
+    const roomPaused = sessionStorage.getItem('le7_room_paused')
+    if (!currentRoomId || roomPaused === '1') return
 
     const gameRow = await fetchRoom(currentRoomId)
     if (!gameRow) return
@@ -1769,6 +1777,7 @@ async function createRoom() {
   }
 
   sessionStorage.setItem('le7_room_id', roomId)
+  sessionStorage.removeItem('le7_room_paused')
   renderWaitingRoom(roomId, initialState, 'Salon créé')
   startRoomPolling(roomId)
   await loadRoom(roomId, 'Salon créé')
@@ -1825,6 +1834,7 @@ async function joinRoom() {
   }
 
   sessionStorage.setItem('le7_room_id', roomId)
+  sessionStorage.removeItem('le7_room_paused')
   renderRoom(roomId, nextState, 'Salon rejoint')
   startRoomPolling(roomId)
   await loadRoom(roomId, 'Salon rejoint')
@@ -1837,6 +1847,7 @@ async function leaveRoom() {
   if (!roomId) {
     stopRoomPolling()
     closeVictoryOverlay()
+    sessionStorage.removeItem('le7_room_paused')
     if (window.goToMenuScreen) window.goToMenuScreen()
     return
   }
@@ -1845,6 +1856,7 @@ async function leaveRoom() {
 
   if (!gameRow) {
     sessionStorage.removeItem('le7_room_id')
+    sessionStorage.removeItem('le7_room_paused')
     stopRoomPolling()
     closeVictoryOverlay()
     if (window.goToMenuScreen) window.goToMenuScreen()
@@ -1862,6 +1874,7 @@ async function leaveRoom() {
       .eq('room_id', roomId)
 
     sessionStorage.removeItem('le7_room_id')
+    sessionStorage.removeItem('le7_room_paused')
     stopRoomPolling()
     closeVictoryOverlay()
     if (window.goToMenuScreen) window.goToMenuScreen()
@@ -1932,20 +1945,18 @@ async function leaveRoom() {
     }
   }
 
-  const nextState = {
-    ...state,
-    hostId: nextHostId,
-    started: nextStarted,
-    players: remainingPlayers,
-    onlineGame: nextOnlineGame
-  }
-
   const { error } = await supabase
     .from('games')
     .update({
       host_id: nextHostId,
       started: nextStarted,
-      state: nextState
+      state: {
+        ...state,
+        hostId: nextHostId,
+        started: nextStarted,
+        players: remainingPlayers,
+        onlineGame: nextOnlineGame
+      }
     })
     .eq('room_id', roomId)
 
@@ -1955,6 +1966,7 @@ async function leaveRoom() {
   }
 
   sessionStorage.removeItem('le7_room_id')
+  sessionStorage.removeItem('le7_room_paused')
   stopRoomPolling()
   closeVictoryOverlay()
   if (window.goToMenuScreen) window.goToMenuScreen()
@@ -2032,6 +2044,7 @@ async function startOnlineGame() {
     return
   }
 
+  sessionStorage.removeItem('le7_room_paused')
   closeVictoryOverlay()
   renderGameState(roomId, nextState, 'Partie en ligne commencée')
   await loadRoom(roomId)
@@ -2105,6 +2118,7 @@ async function startOnlineNextRound() {
     return
   }
 
+  sessionStorage.removeItem('le7_room_paused')
   closeVictoryOverlay()
   renderGameState(roomId, nextState, 'Nouvelle manche')
 }
@@ -2173,6 +2187,7 @@ async function restartOnlineMatch() {
     return
   }
 
+  sessionStorage.removeItem('le7_room_paused')
   closeVictoryOverlay()
   renderGameState(roomId, nextState, 'Nouvelle partie')
 }
@@ -2464,6 +2479,7 @@ window.createRoom = createRoom
 window.joinRoom = joinRoom
 window.leaveRoom = leaveRoom
 window.closeVictoryOverlay = closeVictoryOverlay
+window.returnToMenuFromOnline = returnToMenuFromOnline
 
 const onlineStartBtn = document.getElementById('onlineStartBtn')
 if (onlineStartBtn) {
@@ -2471,7 +2487,9 @@ if (onlineStartBtn) {
 }
 
 const savedRoomId = sessionStorage.getItem('le7_room_id')
-if (savedRoomId) {
+const roomPaused = sessionStorage.getItem('le7_room_paused')
+
+if (savedRoomId && roomPaused !== '1') {
   loadRoom(savedRoomId)
 }
 </script>
