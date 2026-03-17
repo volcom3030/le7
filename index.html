@@ -303,7 +303,7 @@ button, input { font: inherit; }
 
   <div id="onlineInfo" style="margin-top:10px;"></div>
 
-  <button type="button" class="primary-btn" id="startBtn">Commencer</button>
+  <button type="button" class="primary-btn" id="startBtn" onclick="startOnlineGame()">Commencer</button>
   <div style="height:10px"></div>
   <button type="button" class="secondary-btn" id="instructionsBtn">Instructions</button>
   <div style="height:10px"></div>
@@ -1117,6 +1117,9 @@ window.addEventListener('load', () => {
   updateOnlineInfoFromRoom(data, roomId)
   watchRoom(roomId)
 }
+  if (data.state?.started) {
+  renderOnlineStartedScreen(data.state)
+  }
 
 let roomChannel = null
 let roomRefreshInterval = null
@@ -1149,7 +1152,69 @@ function watchRoom(roomId) {
     loadRoom(roomId)
   }, 2000)
 }
+async function startOnlineGame() {
+  const roomId = localStorage.getItem('le7_room_id')
 
+  if (!roomId) {
+    alert('Aucun salon actif')
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('games')
+    .select('*')
+    .eq('room_id', roomId)
+    .single()
+
+  if (error || !data) {
+    alert('Impossible de charger le salon')
+    return
+  }
+
+  const state = data.state || {}
+  const players = state.players || []
+
+  if (players.length < 2) {
+    alert('Il faut au moins 2 joueurs')
+    return
+  }
+
+  const newState = {
+    ...state,
+    started: true,
+    phase: 'lobby_started',
+    message: 'La partie en ligne a commencé',
+    onlinePlayers: players.map((p, index) => ({
+      id: p.id,
+      name: p.name,
+      index
+    }))
+  }
+
+  const { error: updateError } = await supabase
+    .from('games')
+    .update({
+      started: true,
+      state: newState
+    })
+    .eq('room_id', roomId)
+
+  if (updateError) {
+    alert('Erreur démarrage : ' + updateError.message)
+    return
+  }
+
+  alert('Partie en ligne lancée')
+  await loadRoom(roomId)
+  renderOnlineStartedScreen(newState)
+}
+  function renderOnlineStartedScreen(state) {
+  const info = document.getElementById('onlineInfo')
+  if (info) {
+    const names = (state.onlinePlayers || []).map(p => p.name).join(', ')
+    info.textContent = 'Partie lancée | Joueurs : ' + names
+  }
+  }
   window.createRoom = createRoom
   window.joinRoom = joinRoom
 </script>
