@@ -189,7 +189,7 @@ button, input { font: inherit; }
   background: linear-gradient(180deg, #fff7f7 0%, #f1dddd 100%);
   color: #c62828;
 }
-black, .black {
+.black {
   background: linear-gradient(180deg, #ffffff 0%, #dddddd 100%);
   color: #111;
 }
@@ -311,7 +311,6 @@ black, .black {
 
 <div id="onlineRoomScreen" class="screen hidden">
   <div class="title">Salon en ligne</div>
-
   <div id="onlineInfo" class="turn-msg" style="max-width:980px;"></div>
 
   <div class="actions">
@@ -434,35 +433,45 @@ function hideAllMainScreens() {
   $('menu').classList.add('hidden');
   $('namesForm').classList.add('hidden');
   $('game').classList.add('hidden');
-  const onlineRoomScreen = $('onlineRoomScreen');
-  if (onlineRoomScreen) onlineRoomScreen.classList.add('hidden');
+  $('onlineRoomScreen').classList.add('hidden');
+}
+
+function showScreen(screenId) {
+  hideAllMainScreens();
+  $(screenId).classList.remove('hidden');
+}
+
+function setScreen(screenId, hashValue) {
+  showScreen(screenId);
+  if (hashValue && location.hash !== hashValue) {
+    history.replaceState(null, '', hashValue);
+  }
 }
 
 function applyRoute() {
   const hash = location.hash || '#menu';
-  hideAllMainScreens();
 
   if (hash === '#online-room') {
-    $('onlineRoomScreen').classList.remove('hidden');
+    showScreen('onlineRoomScreen');
     return;
   }
   if (hash === '#names') {
-    $('namesForm').classList.remove('hidden');
+    showScreen('namesForm');
     return;
   }
   if (hash === '#game') {
-    $('game').classList.remove('hidden');
+    showScreen('game');
     return;
   }
-  $('menu').classList.remove('hidden');
+  showScreen('menu');
 }
 
 function openOnlineRoomScreen() {
-  location.hash = '#online-room';
+  setScreen('onlineRoomScreen', '#online-room');
 }
 
 function goToMenuScreen() {
-  location.hash = '#menu';
+  setScreen('menu', '#menu');
 }
 
 window.openOnlineRoomScreen = openOnlineRoomScreen;
@@ -493,7 +502,7 @@ function setBotDifficulty(level){
 }
 
 function showNamesForm(){
-  location.hash = '#names';
+  setScreen('namesForm', '#names');
   $('name2').classList.toggle('hidden', selectedMode < 2 || selectedMode === 1);
   $('name3').classList.toggle('hidden', selectedMode < 3);
   $('name4').classList.toggle('hidden', selectedMode < 4);
@@ -503,7 +512,7 @@ function showNamesForm(){
 }
 
 function backToMenuFromNames(){
-  location.hash = '#menu';
+  setScreen('menu', '#menu');
 }
 
 function startGame(){
@@ -523,7 +532,7 @@ function startGame(){
     ].slice(0, totalPlayers);
   }
   scores = [0,0,0,0];
-  location.hash = '#game';
+  setScreen('game', '#game');
   renderScores();
   newRound();
 }
@@ -952,7 +961,7 @@ function openMenu(){ $('menuOverlay').classList.add('show'); }
 function closeMenu(){ $('menuOverlay').classList.remove('show'); }
 function mainMenu(){
   closeMenu();
-  location.hash = '#menu';
+  setScreen('menu', '#menu');
 }
 function downloadGameFile(){
   try {
@@ -979,7 +988,7 @@ window.addEventListener('load', () => {
   if (i) i.addEventListener('click', openInstructions);
   if (d) d.addEventListener('click', downloadGameFile);
 
-  if (!location.hash) location.hash = '#menu';
+  if (!location.hash) setScreen('menu', '#menu');
   else applyRoute();
 });
 </script>
@@ -991,7 +1000,6 @@ const SUPABASE_URL = 'https://pzrhgekqxaacmawqhxxf.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_fDFHYtswH0r0XnPCyVjZoA_r3wh5hj6'
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
-window.supabaseClient = supabase
 
 const ONLINE_SUITS = ['spades', 'hearts', 'diamonds', 'clubs']
 const ONLINE_SUIT_SYMBOL = {
@@ -1019,15 +1027,6 @@ const ONLINE_RANK_BY_VALUE = {
 let roomRefreshInterval = null
 let roomPollingRoomId = null
 
-function makeRoomCode(length = 6) {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  let code = ''
-  for (let i = 0; i < length; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)]
-  }
-  return code
-}
-
 function getPlayerId() {
   let id = sessionStorage.getItem('le7_player_id')
   if (!id) {
@@ -1039,8 +1038,8 @@ function getPlayerId() {
 
 function getPlayerName() {
   const input = document.getElementById('onlineName')
-  const name = input ? input.value.trim() : ''
-  return name || 'Joueur'
+  const value = input ? input.value.trim() : ''
+  return value || 'Joueur'
 }
 
 function escapeHtml(value = '') {
@@ -1050,6 +1049,68 @@ function escapeHtml(value = '') {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;')
+}
+
+function openOnlineRoomScreenSafe() {
+  if (window.openOnlineRoomScreen) {
+    window.openOnlineRoomScreen()
+    return
+  }
+
+  const menu = document.getElementById('menu')
+  const namesForm = document.getElementById('namesForm')
+  const game = document.getElementById('game')
+  const onlineRoomScreen = document.getElementById('onlineRoomScreen')
+
+  if (menu) menu.classList.add('hidden')
+  if (namesForm) namesForm.classList.add('hidden')
+  if (game) game.classList.add('hidden')
+  if (onlineRoomScreen) onlineRoomScreen.classList.remove('hidden')
+}
+
+function makeRoomCode(length = 6) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = ''
+  for (let i = 0; i < length; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return code
+}
+
+function normalizePlayers(players = []) {
+  const seen = new Map()
+
+  players.forEach(player => {
+    if (!player || !player.id) return
+    seen.set(player.id, {
+      id: player.id,
+      name: (player.name || 'Joueur').trim() || 'Joueur',
+      online: player.online !== false
+    })
+  })
+
+  return [...seen.values()]
+}
+
+function upsertPlayerInState(players, player) {
+  const list = normalizePlayers(players)
+  const index = list.findIndex(p => p.id === player.id)
+
+  if (index === -1) {
+    list.push({
+      id: player.id,
+      name: player.name || 'Joueur',
+      online: true
+    })
+  } else {
+    list[index] = {
+      ...list[index],
+      name: player.name || list[index].name || 'Joueur',
+      online: true
+    }
+  }
+
+  return normalizePlayers(list)
 }
 
 function makeEmptyOnlineTable() {
@@ -1123,10 +1184,8 @@ function isLegalOnlineMove(card, table) {
 
   if (card.suit === 'diamonds') {
     if (totalPlayedCount(table) === 0) return card.value === 7
-
     const line = table.diamonds || []
     if (line.length === 0) return false
-
     const min = Math.min(...line)
     const max = Math.max(...line)
     return !line.includes(card.value) && (card.value === min - 1 || card.value === max + 1)
@@ -1172,49 +1231,23 @@ function getPlayerNameById(playerList, playerId) {
   return playerList.find(player => player.id === playerId)?.name || 'Joueur'
 }
 
-function normalizePlayers(players = []) {
-  return players.map(player => ({
-    id: player.id,
-    name: player.name || 'Joueur',
-    online: player.online !== false
-  }))
-}
-
-function upsertPlayerInState(players, player) {
-  const list = normalizePlayers(players)
-  const index = list.findIndex(p => p.id === player.id)
-
-  if (index === -1) {
-    list.push({ id: player.id, name: player.name, online: true })
-  } else {
-    list[index] = { ...list[index], name: player.name, online: true }
-  }
-
-  return list
-}
-
-function updateOnlineInfoFromRoom(gameRow, roomId) {
-  window.onlineRoom = gameRow
-
+function setOnlineInfo(roomId, state, extra = '') {
   const info = document.getElementById('onlineInfo')
   const roomCodeInput = document.getElementById('roomCode')
+  const roomPlayers = normalizePlayers(state.players || [])
+  const names = roomPlayers.map(player => player.name).join(', ')
+  const currentTurnName = state?.onlineGame?.currentPlayerId
+    ? getPlayerNameById(state.onlineGame.players || [], state.onlineGame.currentPlayerId)
+    : ''
 
-  if (roomCodeInput && roomId) {
+  if (roomCodeInput) {
     roomCodeInput.value = roomId
   }
 
   if (!info) return
 
-  const state = gameRow?.state || {}
-  const roomPlayers = normalizePlayers(state.players || [])
-  const names = roomPlayers.map(player => player.name).join(', ')
-  const isStarted = !!state.started
-  const currentTurnName = state?.onlineGame?.currentPlayerId
-    ? getPlayerNameById(state.onlineGame.players || [], state.onlineGame.currentPlayerId)
-    : ''
-
   let text = 'Salon : ' + roomId + ' | Joueurs : ' + (names || 'aucun')
-  text += isStarted ? ' | Statut : partie lancée' : ' | Statut : en attente'
+  text += state.started ? ' | Statut : partie lancée' : ' | Statut : en attente'
 
   if (currentTurnName) {
     text += ' | Tour : ' + currentTurnName
@@ -1224,17 +1257,24 @@ function updateOnlineInfoFromRoom(gameRow, roomId) {
     text += ' | Gagnant : ' + getPlayerNameById(state.onlineGame.players || [], state.onlineGame.winnerId)
   }
 
+  if (extra) {
+    text += ' | ' + extra
+  }
+
   info.textContent = text
 }
 
-function renderWaitingRoom(gameRow) {
+function renderWaitingRoom(roomId, state, extra = '') {
+  openOnlineRoomScreenSafe()
+
   const area = document.getElementById('onlineGameArea')
   const startBtn = document.getElementById('onlineStartBtn')
   const playerId = getPlayerId()
-  const state = gameRow?.state || {}
+  const hostId = state.hostId || null
   const roomPlayers = normalizePlayers(state.players || [])
-  const hostId = gameRow?.host_id || state?.hostId || null
   const isHost = hostId === playerId
+
+  setOnlineInfo(roomId, state, extra)
 
   const playersHtml = roomPlayers.map(player => {
     const isMe = player.id === playerId
@@ -1246,37 +1286,43 @@ function renderWaitingRoom(gameRow) {
     `
   }).join('')
 
-  area.innerHTML = `
-    <div class="panel">
-      <div class="panel-title">SALON</div>
-      <div style="text-align:center; margin-bottom:14px;">
-        ${roomPlayers.length < 2 ? 'En attente d’au moins 2 joueurs.' : 'Le salon est prêt.'}
+  if (area) {
+    area.innerHTML = `
+      <div class="panel">
+        <div class="panel-title">SALON</div>
+        <div style="text-align:center; margin-bottom:14px;">
+          ${roomPlayers.length < 2 ? 'En attente d’au moins 2 joueurs.' : 'Le salon est prêt.'}
+        </div>
+        <div class="room-players" style="margin-bottom:14px;">
+          ${playersHtml || '<div class="score">Aucun joueur.</div>'}
+        </div>
+        <div style="text-align:center; opacity:.9;">
+          ${isHost ? 'Tu es l’hôte du salon.' : 'Seul l’hôte peut lancer la partie.'}
+        </div>
       </div>
-      <div class="room-players" style="margin-bottom:14px;">
-        ${playersHtml || '<div class="score">Aucun joueur.</div>'}
-      </div>
-      <div style="text-align:center; opacity:.9;">
-        ${isHost ? 'Tu es l’hôte du salon.' : 'Seul l’hôte peut lancer la partie.'}
-      </div>
-    </div>
-  `
+    `
+  }
 
-  if (!startBtn) return
-
-  if (isHost) {
-    startBtn.classList.remove('hidden')
-    startBtn.disabled = roomPlayers.length < 2
-    startBtn.style.opacity = roomPlayers.length < 2 ? '.6' : '1'
-    startBtn.style.cursor = roomPlayers.length < 2 ? 'not-allowed' : 'pointer'
-  } else {
-    startBtn.classList.add('hidden')
+  if (startBtn) {
+    if (isHost) {
+      startBtn.classList.remove('hidden')
+      startBtn.disabled = roomPlayers.length < 2
+      startBtn.style.opacity = roomPlayers.length < 2 ? '.6' : '1'
+      startBtn.style.cursor = roomPlayers.length < 2 ? 'not-allowed' : 'pointer'
+    } else {
+      startBtn.classList.add('hidden')
+    }
   }
 }
 
-function renderGameState(state) {
+function renderGameState(roomId, state, extra = '') {
+  openOnlineRoomScreenSafe()
+
   const area = document.getElementById('onlineGameArea')
   const startBtn = document.getElementById('onlineStartBtn')
   if (!area) return
+
+  setOnlineInfo(roomId, state, extra)
 
   if (startBtn) startBtn.classList.add('hidden')
 
@@ -1378,36 +1424,40 @@ function renderGameState(state) {
   })
 }
 
-function renderOnlineState(gameRow) {
-  const state = gameRow?.state || {}
-
+function renderRoom(roomId, state, extra = '') {
   if (!state.started || !state.onlineGame) {
-    renderWaitingRoom(gameRow)
+    renderWaitingRoom(roomId, state, extra)
     return
   }
-
-  renderGameState(state)
+  renderGameState(roomId, state, extra)
 }
 
-async function loadRoom(roomId) {
-  const { data: gameRow, error } = await supabase
+async function fetchRoom(roomId) {
+  const { data, error } = await supabase
     .from('games')
     .select('*')
     .eq('room_id', roomId)
     .single()
 
-  if (error || !gameRow) {
-    alert('Impossible de charger le salon')
+  if (error || !data) return null
+  return data
+}
+
+async function loadRoom(roomId, extra = '') {
+  const gameRow = await fetchRoom(roomId)
+
+  if (!gameRow) {
+    renderWaitingRoom(roomId, {
+      roomId,
+      hostId: getPlayerId(),
+      started: false,
+      players: []
+    }, extra)
     return
   }
 
-  updateOnlineInfoFromRoom(gameRow, roomId)
-  renderOnlineState(gameRow)
+  renderRoom(roomId, gameRow.state || {}, extra)
   startRoomPolling(roomId)
-
-  if (window.openOnlineRoomScreen) {
-    window.openOnlineRoomScreen()
-  }
 }
 
 function startRoomPolling(roomId) {
@@ -1423,17 +1473,11 @@ function startRoomPolling(roomId) {
     const currentRoomId = sessionStorage.getItem('le7_room_id')
     if (!currentRoomId) return
 
-    const { data: gameRow, error } = await supabase
-      .from('games')
-      .select('*')
-      .eq('room_id', currentRoomId)
-      .single()
+    const gameRow = await fetchRoom(currentRoomId)
+    if (!gameRow) return
 
-    if (error || !gameRow) return
-
-    updateOnlineInfoFromRoom(gameRow, currentRoomId)
-    renderOnlineState(gameRow)
-  }, 1500)
+    renderRoom(currentRoomId, gameRow.state || {})
+  }, 1200)
 }
 
 async function createRoom() {
@@ -1451,7 +1495,7 @@ async function createRoom() {
     onlineGame: null
   }
 
-  const { error: gameError } = await supabase
+  const { error } = await supabase
     .from('games')
     .upsert({
       room_id: roomId,
@@ -1460,14 +1504,15 @@ async function createRoom() {
       state: initialState
     })
 
-  if (gameError) {
-    alert('Erreur création salon : ' + gameError.message)
+  if (error) {
+    alert('Erreur création salon : ' + error.message)
     return
   }
 
   sessionStorage.setItem('le7_room_id', roomId)
-  alert('Salon créé : ' + roomId)
-  await loadRoom(roomId)
+  renderWaitingRoom(roomId, initialState, 'Salon créé')
+  startRoomPolling(roomId)
+  await loadRoom(roomId, 'Salon créé')
 }
 
 async function joinRoom() {
@@ -1481,13 +1526,9 @@ async function joinRoom() {
     return
   }
 
-  const { data: gameRow, error: gameError } = await supabase
-    .from('games')
-    .select('*')
-    .eq('room_id', roomId)
-    .single()
+  const gameRow = await fetchRoom(roomId)
 
-  if (gameError || !gameRow) {
+  if (!gameRow) {
     alert('Salon introuvable')
     return
   }
@@ -1495,38 +1536,39 @@ async function joinRoom() {
   const state = gameRow.state || {}
 
   if (state.started) {
-    alert('Partie déjà commencée, impossible de rejoindre maintenant')
-    return
+    const existingPlayer = normalizePlayers(state.players || []).find(player => player.id === playerId)
+    if (!existingPlayer) {
+      alert('Partie déjà commencée, impossible de rejoindre maintenant')
+      return
+    }
   }
-
-  const nextPlayers = upsertPlayerInState(state.players || [], {
-    id: playerId,
-    name: playerName
-  })
 
   const nextState = {
     ...state,
     roomId,
     hostId: gameRow.host_id || state.hostId || playerId,
-    started: false,
-    players: nextPlayers,
-    onlineGame: null
+    started: !!state.started,
+    players: upsertPlayerInState(state.players || [], {
+      id: playerId,
+      name: playerName
+    }),
+    onlineGame: state.onlineGame || null
   }
 
-  const { error: updateError } = await supabase
+  const { error } = await supabase
     .from('games')
     .update({ state: nextState })
     .eq('room_id', roomId)
-    .select()
 
-  if (updateError) {
-    alert('Erreur mise à jour salon : ' + updateError.message)
+  if (error) {
+    alert('Erreur mise à jour salon : ' + error.message)
     return
   }
 
   sessionStorage.setItem('le7_room_id', roomId)
-  alert('Salon rejoint : ' + roomId)
-  await loadRoom(roomId)
+  renderRoom(roomId, nextState, 'Salon rejoint')
+  startRoomPolling(roomId)
+  await loadRoom(roomId, 'Salon rejoint')
 }
 
 async function startOnlineGame() {
@@ -1538,13 +1580,9 @@ async function startOnlineGame() {
     return
   }
 
-  const { data: gameRow, error } = await supabase
-    .from('games')
-    .select('*')
-    .eq('room_id', roomId)
-    .single()
+  const gameRow = await fetchRoom(roomId)
 
-  if (error || !gameRow) {
+  if (!gameRow) {
     alert('Impossible de charger le salon')
     return
   }
@@ -1589,32 +1627,21 @@ async function startOnlineGame() {
     }
   }
 
-  const { data: updatedRows, error: updateError } = await supabase
+  const { error } = await supabase
     .from('games')
     .update({
       started: true,
       state: nextState
     })
     .eq('room_id', roomId)
-    .select()
 
-  if (updateError) {
-    alert('Erreur démarrage : ' + updateError.message)
+  if (error) {
+    alert('Erreur démarrage : ' + error.message)
     return
   }
 
-  const updatedGame = updatedRows && updatedRows[0]
-    ? updatedRows[0]
-    : { ...gameRow, started: true, state: nextState }
-
-  updateOnlineInfoFromRoom(updatedGame, roomId)
-  renderOnlineState(updatedGame)
-
-  if (window.openOnlineRoomScreen) {
-    window.openOnlineRoomScreen()
-  }
-
-  alert('Partie en ligne commencée')
+  renderGameState(roomId, nextState, 'Partie en ligne commencée')
+  await loadRoom(roomId)
 }
 
 async function playOnlineCard(cardId) {
@@ -1623,13 +1650,9 @@ async function playOnlineCard(cardId) {
 
   if (!roomId) return
 
-  const { data: gameRow, error } = await supabase
-    .from('games')
-    .select('*')
-    .eq('room_id', roomId)
-    .single()
+  const gameRow = await fetchRoom(roomId)
 
-  if (error || !gameRow) {
+  if (!gameRow) {
     alert('Impossible de charger la partie')
     return
   }
@@ -1654,7 +1677,6 @@ async function playOnlineCard(cardId) {
 
   const myHand = [...(game.hands?.[playerId] || [])]
   const cardIndex = myHand.findIndex(card => card.id === cardId)
-
   if (cardIndex === -1) return
 
   const card = myHand[cardIndex]
@@ -1702,23 +1724,17 @@ async function playOnlineCard(cardId) {
     }
   }
 
-  const { data: updatedRows, error: updateError } = await supabase
+  const { error } = await supabase
     .from('games')
     .update({ state: nextState })
     .eq('room_id', roomId)
-    .select()
 
-  if (updateError) {
-    alert('Erreur jeu : ' + updateError.message)
+  if (error) {
+    alert('Erreur jeu : ' + error.message)
     return
   }
 
-  const updatedGame = updatedRows && updatedRows[0]
-    ? updatedRows[0]
-    : { ...gameRow, state: nextState }
-
-  updateOnlineInfoFromRoom(updatedGame, roomId)
-  renderOnlineState(updatedGame)
+  renderGameState(roomId, nextState)
 }
 
 window.createRoom = createRoom
