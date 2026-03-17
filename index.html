@@ -506,9 +506,7 @@ function showNamesForm(){
   $('name2').classList.toggle('hidden', selectedMode < 2 || selectedMode === 1);
   $('name3').classList.toggle('hidden', selectedMode < 3);
   $('name4').classList.toggle('hidden', selectedMode < 4);
-  if (selectedMode === 1) {
-    $('name2').classList.add('hidden');
-  }
+  if (selectedMode === 1) $('name2').classList.add('hidden');
 }
 
 function backToMenuFromNames(){
@@ -519,9 +517,7 @@ function startGame(){
   if (selectedMode === 1) {
     totalPlayers = selectedBotCount + 1;
     names = [($('name1').value || 'Vous').trim()];
-    for (let i = 1; i <= selectedBotCount; i++) {
-      names.push(`IA ${i}`);
-    }
+    for (let i = 1; i <= selectedBotCount; i++) names.push(`IA ${i}`);
   } else {
     totalPlayers = selectedMode;
     names = [
@@ -554,13 +550,7 @@ function createDeck(){
   let id = 1;
   for (let suit = 0; suit < 4; suit++) {
     for (const rank of RANKS) {
-      deck.push({
-        id: id++,
-        suit,
-        symbol: SUITS[suit],
-        rank,
-        value: VALUE_BY_RANK[rank]
-      });
+      deck.push({ id: id++, suit, symbol: SUITS[suit], rank, value: VALUE_BY_RANK[rank] });
     }
   }
   for (let i = deck.length - 1; i > 0; i--) {
@@ -769,20 +759,14 @@ function advanceTurn(){
 }
 
 function chooseBotCard(legalCards){
-  if (botDifficulty === 'easy') {
-    return legalCards[Math.floor(Math.random() * legalCards.length)];
-  }
-  if (botDifficulty === 'hard') {
-    return legalCards.sort((a, b) => cardPoints(b) - cardPoints(a))[0];
-  }
+  if (botDifficulty === 'easy') return legalCards[Math.floor(Math.random() * legalCards.length)];
+  if (botDifficulty === 'hard') return legalCards.sort((a, b) => cardPoints(b) - cardPoints(a))[0];
   const sorted = [...legalCards].sort((a, b) => cardPoints(b) - cardPoints(a));
   return sorted[0] || legalCards[Math.floor(Math.random() * legalCards.length)];
 }
 
 function chooseCardToGive(giverHand){
-  if (botDifficulty === 'easy') {
-    return Math.floor(Math.random() * giverHand.length);
-  }
+  if (botDifficulty === 'easy') return Math.floor(Math.random() * giverHand.length);
 
   let bestIndex = 0;
   let bestScore = -1;
@@ -921,9 +905,7 @@ function checkWinner(){
   for (let i = 0; i < totalPlayers; i++) {
     if (players[i].length === 0) {
       const roundScores = players.map(handPoints);
-      for (let j = 0; j < totalPlayers; j++) {
-        scores[j] += roundScores[j];
-      }
+      for (let j = 0; j < totalPlayers; j++) scores[j] += roundScores[j];
       renderScores();
       const lines = roundScores.map((pts, idx) => `${names[idx]} : +${pts} pts (total ${scores[idx]})`).join('
 ');
@@ -1171,7 +1153,7 @@ function dealOnlineHands(deck, roomPlayers) {
   return hands
 }
 
-function totalPlayedCount(table) {
+function totalPlayedCountOnline(table) {
   return ONLINE_SUITS.reduce((sum, suit) => sum + ((table[suit] || []).length), 0)
 }
 
@@ -1183,7 +1165,7 @@ function isLegalOnlineMove(card, table) {
   if (!card) return false
 
   if (card.suit === 'diamonds') {
-    if (totalPlayedCount(table) === 0) return card.value === 7
+    if (totalPlayedCountOnline(table) === 0) return card.value === 7
     const line = table.diamonds || []
     if (line.length === 0) return false
     const min = Math.min(...line)
@@ -1241,6 +1223,53 @@ function getPlayerNameById(playerList, playerId) {
   return playerList.find(player => player.id === playerId)?.name || 'Joueur'
 }
 
+function onlineCardPoints(card) {
+  if (card.value === 1) return 20
+  if (card.value >= 2 && card.value <= 9) return 5
+  return 10
+}
+
+function onlineHandPoints(hand = []) {
+  return hand.reduce((sum, card) => sum + onlineCardPoints(card), 0)
+}
+
+function computeOnlineRoundScores(playerList, hands) {
+  const roundScores = {}
+  playerList.forEach(player => {
+    roundScores[player.id] = onlineHandPoints(hands[player.id] || [])
+  })
+  return roundScores
+}
+
+function addOnlineScores(previousScores = {}, roundScores = {}, playerList = []) {
+  const nextScores = { ...previousScores }
+  playerList.forEach(player => {
+    nextScores[player.id] = (nextScores[player.id] || 0) + (roundScores[player.id] || 0)
+  })
+  return nextScores
+}
+
+function getOnlineLeaders(scores = {}, playerList = []) {
+  let minScore = Infinity
+  let leaders = []
+
+  playerList.forEach(player => {
+    const score = scores[player.id] || 0
+    if (score < minScore) {
+      minScore = score
+      leaders = [player.id]
+    } else if (score === minScore) {
+      leaders.push(player.id)
+    }
+  })
+
+  return { leaders, minScore }
+}
+
+function hasReachedOnlineGameEnd(scores = {}, playerList = []) {
+  return playerList.some(player => (scores[player.id] || 0) >= 500)
+}
+
 function setOnlineInfo(roomId, state, extra = '') {
   const info = document.getElementById('onlineInfo')
   const roomCodeInput = document.getElementById('roomCode')
@@ -1250,18 +1279,13 @@ function setOnlineInfo(roomId, state, extra = '') {
     ? getPlayerNameById(state.onlineGame.players || [], state.onlineGame.currentPlayerId)
     : ''
 
-  if (roomCodeInput) {
-    roomCodeInput.value = roomId
-  }
-
+  if (roomCodeInput) roomCodeInput.value = roomId
   if (!info) return
 
   let text = 'Salon : ' + roomId + ' | Joueurs : ' + (names || 'aucun')
   text += state.started ? ' | Statut : partie lancée' : ' | Statut : en attente'
 
-  if (currentTurnName) {
-    text += ' | Tour : ' + currentTurnName
-  }
+  if (currentTurnName) text += ' | Tour : ' + currentTurnName
 
   if (state?.onlineGame?.pendingGive) {
     const giverName = getPlayerNameById(state.onlineGame.players || [], state.onlineGame.pendingGive.giverId)
@@ -1270,13 +1294,15 @@ function setOnlineInfo(roomId, state, extra = '') {
   }
 
   if (state?.onlineGame?.winnerId) {
-    text += ' | Gagnant : ' + getPlayerNameById(state.onlineGame.players || [], state.onlineGame.winnerId)
+    text += ' | Gagnant manche : ' + getPlayerNameById(state.onlineGame.players || [], state.onlineGame.winnerId)
   }
 
-  if (extra) {
-    text += ' | ' + extra
+  if (state?.onlineGame?.finalWinnerIds?.length) {
+    const finalNames = state.onlineGame.finalWinnerIds.map(id => getPlayerNameById(state.onlineGame.players || [], id)).join(', ')
+    text += ' | Fin : ' + finalNames
   }
 
+  if (extra) text += ' | ' + extra
   info.textContent = text
 }
 
@@ -1357,6 +1383,7 @@ function renderGameState(roomId, state, extra = '') {
 
   const playersHtml = playerList.map(player => {
     const count = (game.hands?.[player.id] || []).length
+    const totalScore = game.scores?.[player.id] || 0
     const isCurrent = player.id === game.currentPlayerId
     const isMe = player.id === playerId
     const suffix = []
@@ -1368,7 +1395,7 @@ function renderGameState(roomId, state, extra = '') {
 
     return `
       <div class="score" style="margin:4px;">
-        ${escapeHtml(player.name)} : ${count} cartes${suffix.length ? ' (' + suffix.join(', ') + ')' : ''}
+        ${escapeHtml(player.name)} : ${count} cartes | ${totalScore} pts${suffix.length ? ' (' + suffix.join(', ') + ')' : ''}
       </div>
     `
   }).join('')
@@ -1391,7 +1418,10 @@ function renderGameState(roomId, state, extra = '') {
   }).join('')
 
   let topMessage = ''
-  if (winnerId) {
+  if (game.finalWinnerIds?.length) {
+    const finalNames = game.finalWinnerIds.map(id => getPlayerNameById(playerList, id)).join(', ')
+    topMessage = 'Fin de partie - gagnant : ' + escapeHtml(finalNames)
+  } else if (winnerId) {
     topMessage = 'Manche terminée - gagnant : ' + escapeHtml(winnerName)
   } else if (pendingGive) {
     const giverName = getPlayerNameById(playerList, pendingGive.giverId)
@@ -1448,6 +1478,48 @@ function renderGameState(roomId, state, extra = '') {
     }
   }
 
+  let roundScorePanelHtml = ''
+  if (game.roundScores && winnerId) {
+    const rows = playerList.map(player => {
+      const roundPts = game.roundScores[player.id] || 0
+      const totalPts = game.scores?.[player.id] || 0
+      return `
+        <div class="score" style="margin:4px;">
+          ${escapeHtml(player.name)} : +${roundPts} | total ${totalPts}
+        </div>
+      `
+    }).join('')
+
+    roundScorePanelHtml = `
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-title">POINTS DE LA MANCHE</div>
+        <div class="score-wrap" style="justify-content:center;">
+          ${rows}
+        </div>
+      </div>
+    `
+  }
+
+  let nextRoundPanelHtml = ''
+  if (winnerId && !game.finalWinnerIds?.length) {
+    const isHost = playerId === state.hostId
+    nextRoundPanelHtml = `
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-title">NOUVELLE MANCHE</div>
+        <div style="text-align:center; margin-bottom:12px;">
+          ${isHost ? 'L’hôte peut lancer la manche suivante.' : 'En attente de l’hôte pour la prochaine manche.'}
+        </div>
+        ${
+          isHost
+            ? `<div style="text-align:center;">
+                 <button type="button" class="primary-btn" id="onlineNextRoundBtn">Nouvelle manche</button>
+               </div>`
+            : ''
+        }
+      </div>
+    `
+  }
+
   const handHtml = myHand.map(card => {
     const playable = myTurn && !winnerId && !pendingGive && isLegalOnlineMove(card, game.table || makeEmptyOnlineTable())
     return `
@@ -1482,18 +1554,22 @@ function renderGameState(roomId, state, extra = '') {
       </div>
 
       ${actionPanelHtml}
+      ${roundScorePanelHtml}
+      ${nextRoundPanelHtml}
 
       <div class="panel" style="margin-bottom:0;">
         <div class="panel-title">TA MAIN EN LIGNE</div>
         <div style="text-align:center; margin-bottom:10px;">
           ${
-            winnerId
-              ? 'La manche est terminée.'
-              : pendingGive
-                ? 'Action en attente.'
-                : myTurn
-                  ? (playableCards.length ? 'C’est ton tour.' : 'Aucune carte jouable.')
-                  : 'Attends ton tour.'
+            game.finalWinnerIds?.length
+              ? 'La partie est terminée.'
+              : winnerId
+                ? 'La manche est terminée.'
+                : pendingGive
+                  ? 'Action en attente.'
+                  : myTurn
+                    ? (playableCards.length ? 'C’est ton tour.' : 'Aucune carte jouable.')
+                    : 'Attends ton tour.'
           }
         </div>
 
@@ -1523,15 +1599,16 @@ function renderGameState(roomId, state, extra = '') {
   })
 
   const askBtn = document.getElementById('onlineAskBtn')
-  if (askBtn) {
-    askBtn.addEventListener('click', requestOnlineCard)
-  }
+  if (askBtn) askBtn.addEventListener('click', requestOnlineCard)
 
   area.querySelectorAll('.online-give-card').forEach(button => {
     button.addEventListener('click', () => {
       giveOnlineCard(button.dataset.cardId)
     })
   })
+
+  const nextRoundBtn = document.getElementById('onlineNextRoundBtn')
+  if (nextRoundBtn) nextRoundBtn.addEventListener('click', startOnlineNextRound)
 }
 
 function renderRoom(roomId, state, extra = '') {
@@ -1573,10 +1650,7 @@ async function loadRoom(roomId, extra = '') {
 function startRoomPolling(roomId) {
   if (roomPollingRoomId === roomId && roomRefreshInterval) return
 
-  if (roomRefreshInterval) {
-    clearInterval(roomRefreshInterval)
-  }
-
+  if (roomRefreshInterval) clearInterval(roomRefreshInterval)
   roomPollingRoomId = roomId
 
   roomRefreshInterval = setInterval(async () => {
@@ -1599,9 +1673,7 @@ async function createRoom() {
     roomId,
     hostId: playerId,
     started: false,
-    players: [
-      { id: playerId, name: playerName, online: true }
-    ],
+    players: [{ id: playerId, name: playerName, online: true }],
     onlineGame: null
   }
 
@@ -1691,7 +1763,6 @@ async function startOnlineGame() {
   }
 
   const gameRow = await fetchRoom(roomId)
-
   if (!gameRow) {
     alert('Impossible de charger le salon')
     return
@@ -1733,6 +1804,8 @@ async function startOnlineGame() {
       scores,
       currentPlayerId,
       winnerId: null,
+      finalWinnerIds: null,
+      roundScores: null,
       pendingGive: null,
       lastAction: 'La manche en ligne a commencé. Le 7♦ a été posé automatiquement.'
     }
@@ -1755,6 +1828,77 @@ async function startOnlineGame() {
   await loadRoom(roomId)
 }
 
+async function startOnlineNextRound() {
+  const roomId = sessionStorage.getItem('le7_room_id')
+  const playerId = getPlayerId()
+
+  if (!roomId) return
+
+  const gameRow = await fetchRoom(roomId)
+  if (!gameRow) {
+    alert('Impossible de charger le salon')
+    return
+  }
+
+  const state = gameRow.state || {}
+  const game = state.onlineGame
+
+  if (!state.started || !game) {
+    alert('Aucune partie en ligne active')
+    return
+  }
+
+  if (!game.winnerId) {
+    alert('La manche actuelle n’est pas terminée')
+    return
+  }
+
+  if (game.finalWinnerIds?.length) {
+    alert('La partie est terminée')
+    return
+  }
+
+  if ((gameRow.host_id || state.hostId) !== playerId) {
+    alert('Seul l’hôte peut lancer une nouvelle manche')
+    return
+  }
+
+  const roomPlayers = normalizePlayers(state.players || game.players || [])
+  const deck = createOnlineDeck()
+  const hands = dealOnlineHands(deck, roomPlayers)
+  const table = makeEmptyOnlineTable()
+  const currentPlayerId = autoPlaceSevenDiamond(hands, roomPlayers, table)
+
+  const nextState = {
+    ...state,
+    players: roomPlayers,
+    onlineGame: {
+      ...game,
+      players: roomPlayers,
+      table,
+      hands,
+      currentPlayerId,
+      winnerId: null,
+      finalWinnerIds: null,
+      roundScores: null,
+      pendingGive: null,
+      lastAction: 'Nouvelle manche en ligne. Le 7♦ a été posé automatiquement.'
+    }
+  }
+
+  const { error } = await supabase
+    .from('games')
+    .update({ state: nextState })
+    .eq('room_id', roomId)
+
+  if (error) {
+    alert('Erreur nouvelle manche : ' + error.message)
+    return
+  }
+
+  renderGameState(roomId, nextState, 'Nouvelle manche')
+}
+
 async function requestOnlineCard() {
   const roomId = sessionStorage.getItem('le7_room_id')
   const playerId = getPlayerId()
@@ -1772,7 +1916,7 @@ async function requestOnlineCard() {
     return
   }
 
-  if (game.winnerId) {
+  if (game.winnerId || game.finalWinnerIds?.length) {
     alert('La manche est déjà terminée')
     return
   }
@@ -1868,27 +2012,44 @@ async function giveOnlineCard(cardId) {
   const requesterName = getPlayerNameById(game.players || [], pendingGive.requesterId)
 
   let winnerId = null
+  let finalWinnerIds = null
+  let roundScores = null
   let currentPlayerId = getNextPlayerId(game.players || [], pendingGive.requesterId)
   let lastAction = giverName + ' donne une carte à ' + requesterName
+  let nextScores = { ...(game.scores || {}) }
+
+  const updatedHands = {
+    ...game.hands,
+    [pendingGive.giverId]: giverHand,
+    [pendingGive.requesterId]: requesterHand
+  }
 
   if (giverHand.length === 0) {
     winnerId = pendingGive.giverId
     currentPlayerId = pendingGive.giverId
-    lastAction = giverName + ' n’a plus de cartes et gagne la manche'
+    roundScores = computeOnlineRoundScores(game.players || [], updatedHands)
+    nextScores = addOnlineScores(game.scores || {}, roundScores, game.players || [])
+
+    if (hasReachedOnlineGameEnd(nextScores, game.players || [])) {
+      finalWinnerIds = getOnlineLeaders(nextScores, game.players || []).leaders
+      const winnerNames = finalWinnerIds.map(id => getPlayerNameById(game.players || [], id)).join(', ')
+      lastAction = giverName + ' n’a plus de cartes et gagne la manche | Fin de partie : ' + winnerNames
+    } else {
+      lastAction = giverName + ' n’a plus de cartes et gagne la manche'
+    }
   }
 
   const nextState = {
     ...state,
     onlineGame: {
       ...game,
-      hands: {
-        ...game.hands,
-        [pendingGive.giverId]: giverHand,
-        [pendingGive.requesterId]: requesterHand
-      },
+      hands: updatedHands,
       pendingGive: null,
       currentPlayerId,
       winnerId,
+      finalWinnerIds,
+      roundScores,
+      scores: nextScores,
       lastAction
     }
   }
@@ -1913,7 +2074,6 @@ async function playOnlineCard(cardId) {
   if (!roomId) return
 
   const gameRow = await fetchRoom(roomId)
-
   if (!gameRow) {
     alert('Impossible de charger la partie')
     return
@@ -1932,7 +2092,7 @@ async function playOnlineCard(cardId) {
     return
   }
 
-  if (game.winnerId) {
+  if (game.winnerId || game.finalWinnerIds?.length) {
     alert('La manche est déjà terminée')
     return
   }
@@ -1967,11 +2127,28 @@ async function playOnlineCard(cardId) {
 
   let nextPlayerId = game.currentPlayerId
   let winnerId = null
+  let finalWinnerIds = null
+  let roundScores = null
   let lastAction = actorName + ' joue ' + card.rank + card.symbol
+  let nextScores = { ...(game.scores || {}) }
+
+  const updatedHands = {
+    ...game.hands,
+    [playerId]: myHand
+  }
 
   if (myHand.length === 0) {
     winnerId = playerId
-    lastAction = actorName + ' gagne la manche'
+    roundScores = computeOnlineRoundScores(game.players || [], updatedHands)
+    nextScores = addOnlineScores(game.scores || {}, roundScores, game.players || [])
+
+    if (hasReachedOnlineGameEnd(nextScores, game.players || [])) {
+      finalWinnerIds = getOnlineLeaders(nextScores, game.players || []).leaders
+      const winnerNames = finalWinnerIds.map(id => getPlayerNameById(game.players || [], id)).join(', ')
+      lastAction = actorName + ' gagne la manche | Fin de partie : ' + winnerNames
+    } else {
+      lastAction = actorName + ' gagne la manche'
+    }
   } else {
     nextPlayerId = getNextPlayerId(game.players || [], playerId)
   }
@@ -1981,12 +2158,12 @@ async function playOnlineCard(cardId) {
     onlineGame: {
       ...game,
       table,
-      hands: {
-        ...game.hands,
-        [playerId]: myHand
-      },
+      hands: updatedHands,
       currentPlayerId: nextPlayerId,
       winnerId,
+      finalWinnerIds,
+      roundScores,
+      scores: nextScores,
       pendingGive: null,
       lastAction
     }
