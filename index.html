@@ -303,7 +303,7 @@ button, input { font: inherit; }
 
   <div id="onlineInfo" style="margin-top:10px;"></div>
 
-  <button type="button" class="primary-btn" id="startBtn" onclick="startOnlineGame()">Commencer</button>
+  <button type="button" class="primary-btn" id="startBtn">Commencer</button>
   <div style="height:10px"></div>
   <button type="button" class="secondary-btn" id="instructionsBtn">Instructions</button>
   <div style="height:10px"></div>
@@ -1152,13 +1152,6 @@ function watchRoom(roomId) {
     loadRoom(roomId)
   }, 2000)
 }
-async function startOnlineGame() {
-  const roomId = localStorage.getItem('le7_room_id')
-
-  if (!roomId) {
-    alert('Aucun salon actif')
-    return
-  }
 
   const { data, error } = await supabase
     .from('games')
@@ -1207,13 +1200,7 @@ async function startOnlineGame() {
   alert('Partie en ligne lancée')
   await loadRoom(roomId)
   renderOnlineStartedScreen(newState)
-}
-  function renderOnlineStartedScreen(state) {
-  const info = document.getElementById('onlineInfo')
-  if (info) {
-    const names = (state.onlinePlayers || []).map(p => p.name).join(', ')
-    info.textContent = 'Partie lancée | Joueurs : ' + names
-  }
+
   }
   window.createRoom = createRoom
   window.joinRoom = joinRoom
