@@ -1139,17 +1139,21 @@ function watchRoom(roomId) {
     .on(
       'postgres_changes',
       {
-        event: 'UPDATE',
+        event: '*',
         schema: 'public',
         table: 'games',
         filter: 'room_id=eq.' + roomId
       },
       (payload) => {
-        updateOnlineInfoFromRoom(payload.new, roomId)
+        alert('Changement reçu : ' + payload.eventType)
+        updateOnlineInfoFromRoom(payload.new || payload.record || payload.old, roomId)
       }
     )
-    .subscribe()
+    .subscribe((status) => {
+      alert('Realtime statut : ' + status)
+    })
 }
+
   window.createRoom = createRoom
   window.joinRoom = joinRoom
 </script>
