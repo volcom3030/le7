@@ -1139,14 +1139,16 @@ function watchRoom(roomId) {
     .on(
       'postgres_changes',
       {
-        event: '*',
+        event: 'UPDATE',
         schema: 'public',
-        table: 'games',
-        filter: 'room_id=eq.' + roomId
+        table: 'games'
       },
       (payload) => {
-        alert('Changement reçu : ' + payload.eventType)
-        updateOnlineInfoFromRoom(payload.new || payload.record || payload.old, roomId)
+        alert('UPDATE reçu pour room : ' + payload.new.room_id)
+
+        if (payload.new.room_id === roomId) {
+          updateOnlineInfoFromRoom(payload.new, roomId)
+        }
       }
     )
     .subscribe((status) => {
