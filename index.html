@@ -303,6 +303,10 @@ button, input { font: inherit; }
     <button type="button" class="secondary-btn" onclick="joinRoom()">Rejoindre un salon</button>
   </div>
 
+  <div style="margin-top:10px;">
+    <button type="button" class="primary-btn" id="onlineStartBtn">Commencer en ligne</button>
+  </div>
+
   <div id="onlineInfo" style="margin-top:10px;"></div>
 
   <button type="button" class="primary-btn" id="startBtn">Commencer</button>
@@ -1019,7 +1023,8 @@ function updateOnlineInfoFromRoom(data, roomId) {
 
   if (info) {
     const names = (data.state?.players || []).map(p => p.name).join(', ')
-    info.textContent = 'Salon : ' + roomId + ' | Joueurs : ' + names
+    const startedText = data.state?.started ? ' | Statut : partie lancée' : ' | Statut : en attente'
+    info.textContent = 'Salon : ' + roomId + ' | Joueurs : ' + names + startedText
   }
 }
 
@@ -1177,8 +1182,70 @@ async function joinRoom() {
   await loadRoom(roomId)
 }
 
+async function startOnlineGame() {
+  const roomId = localStorage.getItem('le7_room_id')
+
+  if (!roomId) {
+    alert('Crée ou rejoins un salon d’abord')
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('games')
+    .select('*')
+    .eq('room_id', roomId)
+    .single()
+
+  if (error || !data) {
+    alert('Impossible de charger le salon')
+    return
+  }
+
+  const state = data.state || {}
+  const roomPlayers = state.players || []
+
+  if (roomPlayers.length < 2) {
+    alert('Il faut au moins 2 joueurs dans le salon')
+    return
+  }
+
+  const newState = {
+    ...state,
+    started: true,
+    phase: 'started',
+    message: 'La partie en ligne a commencé',
+    startedAt: new Date().toISOString()
+  }
+
+  const { data: updatedRows, error: updateError } = await supabase
+    .from('games')
+    .update({
+      started: true,
+      state: newState
+    })
+    .eq('room_id', roomId)
+    .select()
+
+  if (updateError) {
+    alert('Erreur démarrage : ' + updateError.message)
+    return
+  }
+
+  const updatedGame = updatedRows && updatedRows[0]
+    ? updatedRows[0]
+    : { ...data, started: true, state: newState }
+
+  updateOnlineInfoFromRoom(updatedGame, roomId)
+  alert('Partie en ligne lancée')
+}
+
 window.createRoom = createRoom
 window.joinRoom = joinRoom
+
+const onlineStartBtn = document.getElementById('onlineStartBtn')
+if (onlineStartBtn) {
+  onlineStartBtn.addEventListener('click', startOnlineGame)
+}
 
 const savedRoomId = localStorage.getItem('le7_room_id')
 if (savedRoomId) {
