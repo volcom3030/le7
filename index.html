@@ -315,6 +315,7 @@ button, input { font: inherit; }
 
   <div class="actions">
     <button type="button" class="primary-btn" id="onlineStartBtn">Commencer en ligne</button>
+    <button type="button" class="secondary-btn" onclick="leaveRoom()">Quitter le salon</button>
     <button type="button" class="secondary-btn" onclick="goToMenuScreen()">Retour au menu</button>
   </div>
 
@@ -401,6 +402,19 @@ button, input { font: inherit; }
       <button class="primary-btn" onclick="newRound()">Nouvelle manche</button>
       <button class="secondary-btn" onclick="mainMenu()">Menu principal</button>
       <button class="close-btn" onclick="closeMenu()">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<div id="victoryOverlay" class="overlay">
+  <div class="overlay-card">
+    <div class="overlay-title" id="victoryTitle">Victoire</div>
+    <div class="overlay-sub" id="victorySubtitle">Fin de partie</div>
+    <div id="victoryScores" class="score-wrap" style="justify-content:center; margin-bottom:18px;"></div>
+    <div class="menu-list">
+      <button type="button" class="primary-btn" id="victoryNewGameBtn">Nouvelle partie</button>
+      <button type="button" class="secondary-btn" onclick="leaveRoom()">Quitter le salon</button>
+      <button type="button" class="close-btn" onclick="closeVictoryOverlay()">Fermer</button>
     </div>
   </div>
 </div>
@@ -1270,6 +1284,62 @@ function hasReachedOnlineGameEnd(scores = {}, playerList = []) {
   return playerList.some(player => (scores[player.id] || 0) >= 500)
 }
 
+function stopRoomPolling() {
+  if (roomRefreshInterval) {
+    clearInterval(roomRefreshInterval)
+    roomRefreshInterval = null
+  }
+  roomPollingRoomId = null
+}
+
+function closeVictoryOverlay() {
+  const overlay = document.getElementById('victoryOverlay')
+  if (overlay) overlay.classList.remove('show')
+}
+
+function showVictoryOverlay(state) {
+  const game = state?.onlineGame
+  if (!game || !game.finalWinnerIds?.length) return
+
+  const title = document.getElementById('victoryTitle')
+  const subtitle = document.getElementById('victorySubtitle')
+  const scoresWrap = document.getElementById('victoryScores')
+  const overlay = document.getElementById('victoryOverlay')
+  const playerId = getPlayerId()
+  const isHost = playerId === state.hostId
+
+  const winnerNames = game.finalWinnerIds
+    .map(id => getPlayerNameById(game.players || [], id))
+    .join(', ')
+
+  if (title) title.textContent = 'Fin de partie'
+  if (subtitle) subtitle.textContent = 'Gagnant : ' + winnerNames
+
+  if (scoresWrap) {
+    const sortedPlayers = [...(game.players || [])].sort((a, b) => {
+      return (game.scores?.[a.id] || 0) - (game.scores?.[b.id] || 0)
+    })
+
+    scoresWrap.innerHTML = sortedPlayers.map(player => {
+      const total = game.scores?.[player.id] || 0
+      const isWinner = game.finalWinnerIds.includes(player.id)
+      return `
+        <div class="score" style="margin:4px;">
+          ${escapeHtml(player.name)} : ${total} pts${isWinner ? ' 🏆' : ''}
+        </div>
+      `
+    }).join('')
+  }
+
+  const newGameBtn = document.getElementById('victoryNewGameBtn')
+  if (newGameBtn) {
+    newGameBtn.style.display = isHost ? 'inline-block' : 'none'
+    newGameBtn.onclick = () => restartOnlineMatch()
+  }
+
+  if (overlay) overlay.classList.add('show')
+}
+
 function setOnlineInfo(roomId, state, extra = '') {
   const info = document.getElementById('onlineInfo')
   const roomCodeInput = document.getElementById('roomCode')
@@ -1379,7 +1449,7 @@ function renderGameState(roomId, state, extra = '') {
   const currentTurnName = game.currentPlayerId ? getPlayerNameById(playerList, game.currentPlayerId) : ''
   const pendingGive = game.pendingGive || null
   const playableCards = myHand.filter(card => isLegalOnlineMove(card, game.table || makeEmptyOnlineTable()))
-  const canAskCard = myTurn && !winnerId && !pendingGive && playableCards.length === 0
+  const canAskCard = myTurn && !winnerId && !pendingGive && !game.finalWinnerIds?.length && playableCards.length === 0
 
   const playersHtml = playerList.map(player => {
     const count = (game.hands?.[player.id] || []).length
@@ -1521,7 +1591,7 @@ function renderGameState(roomId, state, extra = '') {
   }
 
   const handHtml = myHand.map(card => {
-    const playable = myTurn && !winnerId && !pendingGive && isLegalOnlineMove(card, game.table || makeEmptyOnlineTable())
+    const playable = myTurn && !winnerId && !pendingGive && !game.finalWinnerIds?.length && isLegalOnlineMove(card, game.table || makeEmptyOnlineTable())
     return `
       <button
         type="button"
@@ -1609,11 +1679,18 @@ function renderGameState(roomId, state, extra = '') {
 
   const nextRoundBtn = document.getElementById('onlineNextRoundBtn')
   if (nextRoundBtn) nextRoundBtn.addEventListener('click', startOnlineNextRound)
+
+  if (game.finalWinnerIds?.length) {
+    showVictoryOverlay(state)
+  } else {
+    closeVictoryOverlay()
+  }
 }
 
 function renderRoom(roomId, state, extra = '') {
   if (!state.started || !state.onlineGame) {
     renderWaitingRoom(roomId, state, extra)
+    closeVictoryOverlay()
     return
   }
   renderGameState(roomId, state, extra)
@@ -1753,6 +1830,137 @@ async function joinRoom() {
   await loadRoom(roomId, 'Salon rejoint')
 }
 
+async function leaveRoom() {
+  const roomId = sessionStorage.getItem('le7_room_id')
+  const playerId = getPlayerId()
+
+  if (!roomId) {
+    stopRoomPolling()
+    closeVictoryOverlay()
+    if (window.goToMenuScreen) window.goToMenuScreen()
+    return
+  }
+
+  const gameRow = await fetchRoom(roomId)
+
+  if (!gameRow) {
+    sessionStorage.removeItem('le7_room_id')
+    stopRoomPolling()
+    closeVictoryOverlay()
+    if (window.goToMenuScreen) window.goToMenuScreen()
+    return
+  }
+
+  const state = gameRow.state || {}
+  const currentPlayers = normalizePlayers(state.players || [])
+  const remainingPlayers = currentPlayers.filter(player => player.id !== playerId)
+
+  if (remainingPlayers.length === 0) {
+    await supabase
+      .from('games')
+      .delete()
+      .eq('room_id', roomId)
+
+    sessionStorage.removeItem('le7_room_id')
+    stopRoomPolling()
+    closeVictoryOverlay()
+    if (window.goToMenuScreen) window.goToMenuScreen()
+    alert('Tu as quitté le salon')
+    return
+  }
+
+  const nextHostId = remainingPlayers.some(player => player.id === (state.hostId || gameRow.host_id))
+    ? (state.hostId || gameRow.host_id)
+    : remainingPlayers[0].id
+
+  let nextStarted = !!state.started
+  let nextOnlineGame = state.onlineGame || null
+
+  if (nextOnlineGame) {
+    const filteredHands = {}
+    const filteredScores = {}
+
+    remainingPlayers.forEach(player => {
+      filteredHands[player.id] = [...(nextOnlineGame.hands?.[player.id] || [])]
+      filteredScores[player.id] = nextOnlineGame.scores?.[player.id] || 0
+    })
+
+    let nextCurrentPlayerId = nextOnlineGame.currentPlayerId
+    if (!remainingPlayers.some(player => player.id === nextCurrentPlayerId)) {
+      nextCurrentPlayerId = remainingPlayers[0]?.id || null
+    }
+
+    let nextPendingGive = nextOnlineGame.pendingGive || null
+    if (nextPendingGive && (nextPendingGive.giverId === playerId || nextPendingGive.requesterId === playerId)) {
+      nextPendingGive = null
+    }
+
+    let nextWinnerId = nextOnlineGame.winnerId
+    if (nextWinnerId === playerId) nextWinnerId = null
+
+    let nextFinalWinnerIds = nextOnlineGame.finalWinnerIds || null
+    if (Array.isArray(nextFinalWinnerIds)) {
+      nextFinalWinnerIds = nextFinalWinnerIds.filter(id => id !== playerId)
+      if (!nextFinalWinnerIds.length) nextFinalWinnerIds = null
+    }
+
+    let nextRoundScores = nextOnlineGame.roundScores || null
+    if (nextRoundScores) {
+      const filteredRoundScores = {}
+      remainingPlayers.forEach(player => {
+        filteredRoundScores[player.id] = nextRoundScores[player.id] || 0
+      })
+      nextRoundScores = filteredRoundScores
+    }
+
+    if (remainingPlayers.length < 2) {
+      nextStarted = false
+      nextOnlineGame = null
+    } else {
+      nextOnlineGame = {
+        ...nextOnlineGame,
+        players: remainingPlayers,
+        hands: filteredHands,
+        scores: filteredScores,
+        currentPlayerId: nextCurrentPlayerId,
+        pendingGive: nextPendingGive,
+        winnerId: nextWinnerId,
+        finalWinnerIds: nextFinalWinnerIds,
+        roundScores: nextRoundScores,
+        lastAction: (getPlayerNameById(currentPlayers, playerId) || 'Un joueur') + ' a quitté le salon'
+      }
+    }
+  }
+
+  const nextState = {
+    ...state,
+    hostId: nextHostId,
+    started: nextStarted,
+    players: remainingPlayers,
+    onlineGame: nextOnlineGame
+  }
+
+  const { error } = await supabase
+    .from('games')
+    .update({
+      host_id: nextHostId,
+      started: nextStarted,
+      state: nextState
+    })
+    .eq('room_id', roomId)
+
+  if (error) {
+    alert('Erreur quitter salon : ' + error.message)
+    return
+  }
+
+  sessionStorage.removeItem('le7_room_id')
+  stopRoomPolling()
+  closeVictoryOverlay()
+  if (window.goToMenuScreen) window.goToMenuScreen()
+  alert('Tu as quitté le salon')
+}
+
 async function startOnlineGame() {
   const roomId = sessionStorage.getItem('le7_room_id')
   const playerId = getPlayerId()
@@ -1824,6 +2032,7 @@ async function startOnlineGame() {
     return
   }
 
+  closeVictoryOverlay()
   renderGameState(roomId, nextState, 'Partie en ligne commencée')
   await loadRoom(roomId)
 }
@@ -1896,7 +2105,76 @@ async function startOnlineNextRound() {
     return
   }
 
+  closeVictoryOverlay()
   renderGameState(roomId, nextState, 'Nouvelle manche')
+}
+
+async function restartOnlineMatch() {
+  const roomId = sessionStorage.getItem('le7_room_id')
+  const playerId = getPlayerId()
+
+  if (!roomId) return
+
+  const gameRow = await fetchRoom(roomId)
+  if (!gameRow) return
+
+  const state = gameRow.state || {}
+  const game = state.onlineGame
+
+  if (!game || !game.finalWinnerIds?.length) {
+    alert('La partie n’est pas terminée')
+    return
+  }
+
+  if ((gameRow.host_id || state.hostId) !== playerId) {
+    alert('Seul l’hôte peut relancer une nouvelle partie')
+    return
+  }
+
+  const roomPlayers = normalizePlayers(state.players || game.players || [])
+  const deck = createOnlineDeck()
+  const hands = dealOnlineHands(deck, roomPlayers)
+  const table = makeEmptyOnlineTable()
+  const currentPlayerId = autoPlaceSevenDiamond(hands, roomPlayers, table)
+
+  const scores = {}
+  roomPlayers.forEach(player => {
+    scores[player.id] = 0
+  })
+
+  const nextState = {
+    ...state,
+    started: true,
+    players: roomPlayers,
+    onlineGame: {
+      players: roomPlayers,
+      table,
+      hands,
+      scores,
+      currentPlayerId,
+      winnerId: null,
+      finalWinnerIds: null,
+      roundScores: null,
+      pendingGive: null,
+      lastAction: 'Nouvelle partie en ligne. Le 7♦ a été posé automatiquement.'
+    }
+  }
+
+  const { error } = await supabase
+    .from('games')
+    .update({
+      started: true,
+      state: nextState
+    })
+    .eq('room_id', roomId)
+
+  if (error) {
+    alert('Erreur nouvelle partie : ' + error.message)
+    return
+  }
+
+  closeVictoryOverlay()
+  renderGameState(roomId, nextState, 'Nouvelle partie')
 }
 
 async function requestOnlineCard() {
@@ -2184,6 +2462,8 @@ async function playOnlineCard(cardId) {
 
 window.createRoom = createRoom
 window.joinRoom = joinRoom
+window.leaveRoom = leaveRoom
+window.closeVictoryOverlay = closeVictoryOverlay
 
 const onlineStartBtn = document.getElementById('onlineStartBtn')
 if (onlineStartBtn) {
