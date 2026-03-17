@@ -1116,16 +1116,8 @@ window.addEventListener('load', () => {
 
   updateOnlineInfoFromRoom(data, roomId)
   watchRoom(roomId)
-  }
+}
 
-    window.onlineRoom = data
-
-    const info = document.getElementById('onlineInfo')
-    if (info) {
-      const names = (data.state?.players || []).map(p => p.name).join(', ')
-      info.textContent = 'Salon : ' + roomId + ' | Joueurs : ' + names
-    }
-  }
 let roomChannel = null
 
 function updateOnlineInfoFromRoom(data, roomId) {
