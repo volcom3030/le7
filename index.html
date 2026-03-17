@@ -303,18 +303,24 @@ button, input { font: inherit; }
     <button type="button" class="secondary-btn" onclick="joinRoom()">Rejoindre un salon</button>
   </div>
 
-  <div style="margin-top:10px;">
-    <button type="button" class="primary-btn" id="onlineStartBtn">Commencer en ligne</button>
-  </div>
-
-  <div id="onlineInfo" style="margin-top:10px;"></div>
-  <div id="onlineGameArea" style="width:min(980px,100%); margin-top:14px;"></div>
-
-  <button type="button" class="primary-btn" id="startBtn">Commencer local</button>
+  <button type="button" class="primary-btn" id="startBtn" style="margin-top:18px;">Commencer local</button>
   <div style="height:10px"></div>
   <button type="button" class="secondary-btn" id="instructionsBtn">Instructions</button>
   <div style="height:10px"></div>
   <button type="button" class="secondary-btn" id="downloadBtn">Télécharger le jeu</button>
+</div>
+
+<div id="onlineRoomScreen" class="screen hidden">
+  <div class="title">Salon en ligne</div>
+
+  <div id="onlineInfo" class="turn-msg" style="max-width:980px;"></div>
+
+  <div class="actions">
+    <button type="button" class="primary-btn" id="onlineStartBtn">Commencer en ligne</button>
+    <button type="button" class="secondary-btn" onclick="goToMenuScreen()">Retour au menu</button>
+  </div>
+
+  <div id="onlineGameArea" style="width:min(980px,100%); margin-top:14px;"></div>
 </div>
 
 <div id="namesForm" class="screen hidden">
@@ -425,6 +431,50 @@ let pendingReturnToRequester = false;
 
 function $(id){ return document.getElementById(id); }
 
+function hideAllMainScreens() {
+  $('menu').classList.add('hidden');
+  $('namesForm').classList.add('hidden');
+  $('game').classList.add('hidden');
+  const onlineRoomScreen = $('onlineRoomScreen');
+  if (onlineRoomScreen) onlineRoomScreen.classList.add('hidden');
+}
+
+function applyRoute() {
+  const hash = location.hash || '#menu';
+
+  hideAllMainScreens();
+
+  if (hash === '#online-room') {
+    $('onlineRoomScreen').classList.remove('hidden');
+    return;
+  }
+
+  if (hash === '#names') {
+    $('namesForm').classList.remove('hidden');
+    return;
+  }
+
+  if (hash === '#game') {
+    $('game').classList.remove('hidden');
+    return;
+  }
+
+  $('menu').classList.remove('hidden');
+}
+
+function openOnlineRoomScreen() {
+  location.hash = '#online-room';
+}
+
+function goToMenuScreen() {
+  location.hash = '#menu';
+}
+
+window.openOnlineRoomScreen = openOnlineRoomScreen;
+window.goToMenuScreen = goToMenuScreen;
+
+window.addEventListener('hashchange', applyRoute);
+
 function setMode(n){
   selectedMode = n;
   ['btn1','btn2','btn3','btn4'].forEach((id, idx) => {
@@ -448,8 +498,7 @@ function setBotDifficulty(level){
 }
 
 function showNamesForm(){
-  $('menu').classList.add('hidden');
-  $('namesForm').classList.remove('hidden');
+  location.hash = '#names';
   $('name2').classList.toggle('hidden', selectedMode < 2 || selectedMode === 1);
   $('name3').classList.toggle('hidden', selectedMode < 3);
   $('name4').classList.toggle('hidden', selectedMode < 4);
@@ -459,8 +508,7 @@ function showNamesForm(){
 }
 
 function backToMenuFromNames(){
-  $('namesForm').classList.add('hidden');
-  $('menu').classList.remove('hidden');
+  location.hash = '#menu';
 }
 
 function startGame(){
@@ -480,8 +528,7 @@ function startGame(){
     ].slice(0, totalPlayers);
   }
   scores = [0,0,0,0];
-  $('namesForm').classList.add('hidden');
-  $('game').classList.remove('hidden');
+  location.hash = '#game';
   renderScores();
   newRound();
 }
@@ -948,9 +995,7 @@ function openMenu(){ $('menuOverlay').classList.add('show'); }
 function closeMenu(){ $('menuOverlay').classList.remove('show'); }
 function mainMenu(){
   closeMenu();
-  $('game').classList.add('hidden');
-  $('namesForm').classList.add('hidden');
-  $('menu').classList.remove('hidden');
+  location.hash = '#menu';
 }
 function downloadGameFile(){
   try {
@@ -967,13 +1012,26 @@ function downloadGameFile(){
     alert('Téléchargement non disponible');
   }
 }
+
 window.addEventListener('load', () => {
   const s = $('startBtn');
   const i = $('instructionsBtn');
   const d = $('downloadBtn');
-  if (s) s.addEventListener('click', showNamesForm);
+
+  if (s) {
+    s.addEventListener('click', () => {
+      location.hash = '#names';
+    });
+  }
+
   if (i) i.addEventListener('click', openInstructions);
   if (d) d.addEventListener('click', downloadGameFile);
+
+  if (!location.hash) {
+    location.hash = '#menu';
+  } else {
+    applyRoute();
+  }
 });
 </script>
 
@@ -1209,12 +1267,23 @@ function updateOnlineInfoFromRoom(data, roomId) {
 
 function renderOnlineState(state) {
   const area = document.getElementById('onlineGameArea')
+  const startBtn = document.getElementById('onlineStartBtn')
   if (!area) return
 
   if (!state?.started || !state?.onlineGame) {
-    area.innerHTML = ''
+    area.innerHTML = `
+      <div class="panel">
+        <div class="panel-title">SALON</div>
+        <div style="text-align:center;">
+          En attente du lancement de la partie.
+        </div>
+      </div>
+    `
+    if (startBtn) startBtn.classList.remove('hidden')
     return
   }
+
+  if (startBtn) startBtn.classList.add('hidden')
 
   const playerId = getPlayerId()
   const game = state.onlineGame
@@ -1355,6 +1424,10 @@ async function loadRoom(roomId) {
   updateOnlineInfoFromRoom(data, roomId)
   renderOnlineState(data.state)
   startRoomPolling(roomId)
+
+  if (window.openOnlineRoomScreen) {
+    window.openOnlineRoomScreen()
+  }
 }
 
 async function createRoom() {
@@ -1559,6 +1632,11 @@ async function startOnlineGame() {
 
   updateOnlineInfoFromRoom(updatedGame, roomId)
   renderOnlineState(updatedGame.state)
+
+  if (window.openOnlineRoomScreen) {
+    window.openOnlineRoomScreen()
+  }
+
   alert('Partie en ligne commencée')
 }
 
