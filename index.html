@@ -308,8 +308,9 @@ button, input { font: inherit; }
   </div>
 
   <div id="onlineInfo" style="margin-top:10px;"></div>
+  <div id="onlineGameArea" style="width:min(980px,100%); margin-top:14px;"></div>
 
-  <button type="button" class="primary-btn" id="startBtn">Commencer</button>
+  <button type="button" class="primary-btn" id="startBtn">Commencer local</button>
   <div style="height:10px"></div>
   <button type="button" class="secondary-btn" id="instructionsBtn">Instructions</button>
   <div style="height:10px"></div>
@@ -985,6 +986,32 @@ const SUPABASE_KEY = 'sb_publishable_fDFHYtswH0r0XnPCyVjZoA_r3wh5hj6'
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 window.supabaseClient = supabase
 
+const ONLINE_SUITS = ['spades', 'hearts', 'diamonds', 'clubs']
+const ONLINE_SUIT_SYMBOL = {
+  spades: '♠',
+  hearts: '♥',
+  diamonds: '♦',
+  clubs: '♣'
+}
+const ONLINE_SUIT_CLASS = {
+  spades: 'black',
+  hearts: 'red',
+  diamonds: 'red',
+  clubs: 'black'
+}
+const ONLINE_RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'V', 'D', 'R']
+const ONLINE_VALUE_BY_RANK = {
+  A: 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,
+  '8': 8, '9': 9, '10': 10, V: 11, D: 12, R: 13
+}
+const ONLINE_RANK_BY_VALUE = {
+  1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7',
+  8: '8', 9: '9', 10: '10', 11: 'V', 12: 'D', 13: 'R'
+}
+
+let roomRefreshInterval = null
+let roomPollingRoomId = null
+
 function makeRoomCode(length = 6) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   let code = ''
@@ -997,7 +1024,7 @@ function makeRoomCode(length = 6) {
 function getPlayerId() {
   let id = localStorage.getItem('le7_player_id')
   if (!id) {
-    id = crypto.randomUUID()
+    id = 'p_' + Math.random().toString(36).slice(2) + Date.now().toString(36)
     localStorage.setItem('le7_player_id', id)
   }
   return id
@@ -1009,11 +1036,147 @@ function getPlayerName() {
   return name || 'Joueur'
 }
 
-let roomRefreshInterval = null
-let roomPollingRoomId = null
+function escapeHtml(value = '') {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+}
+
+function makeEmptyOnlineTable() {
+  return {
+    spades: [],
+    hearts: [],
+    diamonds: [],
+    clubs: []
+  }
+}
+
+function suitIndex(suit) {
+  return ONLINE_SUITS.indexOf(suit)
+}
+
+function sortOnlineHand(hand) {
+  hand.sort((a, b) => {
+    const suitDiff = suitIndex(a.suit) - suitIndex(b.suit)
+    if (suitDiff !== 0) return suitDiff
+    return a.value - b.value
+  })
+}
+
+function createOnlineDeck() {
+  const deck = []
+  let id = 1
+
+  for (const suit of ONLINE_SUITS) {
+    for (const rank of ONLINE_RANKS) {
+      deck.push({
+        id: 'c' + id++,
+        suit,
+        symbol: ONLINE_SUIT_SYMBOL[suit],
+        rank,
+        value: ONLINE_VALUE_BY_RANK[rank]
+      })
+    }
+  }
+
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[deck[i], deck[j]] = [deck[j], deck[i]]
+  }
+
+  return deck
+}
+
+function dealOnlineHands(deck, roomPlayers) {
+  const hands = {}
+
+  roomPlayers.forEach(player => {
+    hands[player.id] = []
+  })
+
+  deck.forEach((card, index) => {
+    const player = roomPlayers[index % roomPlayers.length]
+    hands[player.id].push(card)
+  })
+
+  Object.values(hands).forEach(sortOnlineHand)
+  return hands
+}
+
+function totalPlayedCount(table) {
+  return ONLINE_SUITS.reduce((sum, suit) => sum + ((table[suit] || []).length), 0)
+}
+
+function diamondRankUnlocked(table, value) {
+  return (table.diamonds || []).includes(value)
+}
+
+function isLegalOnlineMove(card, table) {
+  if (!card) return false
+
+  if (card.suit === 'diamonds') {
+    if (totalPlayedCount(table) === 0) {
+      return card.value === 7
+    }
+
+    const line = table.diamonds || []
+    if (line.length === 0) return false
+
+    const min = Math.min(...line)
+    const max = Math.max(...line)
+    return !line.includes(card.value) && (card.value === min - 1 || card.value === max + 1)
+  }
+
+  if (!diamondRankUnlocked(table, card.value)) {
+    return false
+  }
+
+  const line = table[card.suit] || []
+  if (line.length === 0) {
+    return card.value === 7
+  }
+
+  const min = Math.min(...line)
+  const max = Math.max(...line)
+  return !line.includes(card.value) && (card.value === min - 1 || card.value === max + 1)
+}
+
+function autoPlaceSevenDiamond(hands, roomPlayers, table) {
+  let nextPlayerId = roomPlayers[0]?.id || null
+
+  for (let i = 0; i < roomPlayers.length; i++) {
+    const playerId = roomPlayers[i].id
+    const hand = hands[playerId] || []
+    const idx = hand.findIndex(card => card.suit === 'diamonds' && card.value === 7)
+
+    if (idx !== -1) {
+      hand.splice(idx, 1)
+      sortOnlineHand(hand)
+      table.diamonds = [7]
+      nextPlayerId = roomPlayers[(i + 1) % roomPlayers.length].id
+      break
+    }
+  }
+
+  return nextPlayerId
+}
+
+function getNextPlayerId(playerList, currentPlayerId) {
+  const index = playerList.findIndex(player => player.id === currentPlayerId)
+  if (index === -1) return playerList[0]?.id || null
+  return playerList[(index + 1) % playerList.length]?.id || null
+}
+
+function getPlayerNameById(playerList, playerId) {
+  return playerList.find(player => player.id === playerId)?.name || 'Joueur'
+}
 
 function updateOnlineInfoFromRoom(data, roomId) {
   window.onlineRoom = data
+
   const info = document.getElementById('onlineInfo')
   const roomCodeInput = document.getElementById('roomCode')
 
@@ -1021,11 +1184,134 @@ function updateOnlineInfoFromRoom(data, roomId) {
     roomCodeInput.value = roomId
   }
 
-  if (info) {
-    const names = (data.state?.players || []).map(p => p.name).join(', ')
-    const startedText = data.state?.started ? ' | Statut : partie lancée' : ' | Statut : en attente'
-    info.textContent = 'Salon : ' + roomId + ' | Joueurs : ' + names + startedText
+  if (!info) return
+
+  const roomPlayers = data.state?.players || []
+  const names = roomPlayers.map(player => player.name).join(', ')
+  const isStarted = !!data.state?.started
+  const currentTurnName = data.state?.onlineGame?.currentPlayerId
+    ? getPlayerNameById(data.state.onlineGame.players || [], data.state.onlineGame.currentPlayerId)
+    : ''
+
+  let text = 'Salon : ' + roomId + ' | Joueurs : ' + names
+  text += isStarted ? ' | Statut : partie lancée' : ' | Statut : en attente'
+
+  if (currentTurnName) {
+    text += ' | Tour : ' + currentTurnName
   }
+
+  if (data.state?.onlineGame?.winnerId) {
+    text += ' | Gagnant : ' + getPlayerNameById(data.state.onlineGame.players || [], data.state.onlineGame.winnerId)
+  }
+
+  info.textContent = text
+}
+
+function renderOnlineState(state) {
+  const area = document.getElementById('onlineGameArea')
+  if (!area) return
+
+  if (!state?.started || !state?.onlineGame) {
+    area.innerHTML = ''
+    return
+  }
+
+  const playerId = getPlayerId()
+  const game = state.onlineGame
+  const playerList = game.players || []
+  const myHand = [...(game.hands?.[playerId] || [])]
+  sortOnlineHand(myHand)
+
+  const myTurn = game.currentPlayerId === playerId
+  const winnerId = game.winnerId || null
+  const winnerName = winnerId ? getPlayerNameById(playerList, winnerId) : ''
+  const currentTurnName = game.currentPlayerId ? getPlayerNameById(playerList, game.currentPlayerId) : ''
+
+  const playersHtml = playerList.map(player => {
+    const count = (game.hands?.[player.id] || []).length
+    const isCurrent = player.id === game.currentPlayerId
+    const isMe = player.id === playerId
+    const suffix = []
+    if (isMe) suffix.push('toi')
+    if (isCurrent && !winnerId) suffix.push('tour')
+    return `
+      <div class="score" style="margin:4px;">
+        ${escapeHtml(player.name)} : ${count} cartes${suffix.length ? ' (' + suffix.join(', ') + ')' : ''}
+      </div>
+    `
+  }).join('')
+
+  const tableHtml = ONLINE_SUITS.map(suit => {
+    const values = [...(game.table?.[suit] || [])].sort((a, b) => a - b)
+    const cards = values.map(value => `
+      <div class="table-card ${ONLINE_SUIT_CLASS[suit]}">
+        <div class="table-rank">${ONLINE_RANK_BY_VALUE[value]}</div>
+        <div class="table-suit">${ONLINE_SUIT_SYMBOL[suit]}</div>
+      </div>
+    `).join('')
+
+    return `
+      <div class="suit-line">
+        <div class="suit-label">${ONLINE_SUIT_SYMBOL[suit]}</div>
+        ${cards}
+      </div>
+    `
+  }).join('')
+
+  const handHtml = myHand.map(card => {
+    const playable = myTurn && !winnerId && isLegalOnlineMove(card, game.table || makeEmptyOnlineTable())
+    return `
+      <button
+        type="button"
+        class="card ${ONLINE_SUIT_CLASS[card.suit]} ${playable ? 'highlight' : 'disabled'} online-play-card"
+        data-card-id="${card.id}"
+        ${playable ? '' : 'disabled'}
+        style="border:0; width:100%;"
+      >
+        <div class="card-rank">${card.rank}</div>
+        <div class="card-suit">${card.symbol}</div>
+      </button>
+    `
+  }).join('')
+
+  area.innerHTML = `
+    <div class="panel">
+      <div class="panel-title">PARTIE EN LIGNE</div>
+
+      <div style="text-align:center; margin-bottom:12px; font-weight:700;">
+        ${winnerId ? 'Manche terminée - gagnant : ' + escapeHtml(winnerName) : 'Tour de ' + escapeHtml(currentTurnName)}
+      </div>
+
+      <div class="score-wrap" style="justify-content:center; margin-bottom:14px;">
+        ${playersHtml}
+      </div>
+
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-title">TABLE EN LIGNE</div>
+        <div>${tableHtml}</div>
+      </div>
+
+      <div class="panel" style="margin-bottom:0;">
+        <div class="panel-title">TA MAIN EN LIGNE</div>
+        <div style="text-align:center; margin-bottom:10px;">
+          ${winnerId ? 'La manche est terminée.' : (myTurn ? 'C’est ton tour.' : 'Attends ton tour.')}
+        </div>
+        <div class="hand-grid">
+          ${handHtml || '<div style="text-align:center; width:100%;">Aucune carte.</div>'}
+        </div>
+      </div>
+
+      <div style="text-align:center; margin-top:12px; opacity:.9;">
+        ${escapeHtml(game.lastAction || 'Partie démarrée')}
+      </div>
+    </div>
+  `
+
+  area.querySelectorAll('.online-play-card').forEach(button => {
+    button.addEventListener('click', () => {
+      playOnlineCard(button.dataset.cardId)
+    })
+  })
 }
 
 function startRoomPolling(roomId) {
@@ -1050,6 +1336,7 @@ function startRoomPolling(roomId) {
     if (error || !data) return
 
     updateOnlineInfoFromRoom(data, currentRoomId)
+    renderOnlineState(data.state)
   }, 2000)
 }
 
@@ -1066,6 +1353,7 @@ async function loadRoom(roomId) {
   }
 
   updateOnlineInfoFromRoom(data, roomId)
+  renderOnlineState(data.state)
   startRoomPolling(roomId)
 }
 
@@ -1084,7 +1372,8 @@ async function createRoom() {
     hands: {},
     deck: [],
     scores: {},
-    pendingGiveCard: null
+    pendingGiveCard: null,
+    onlineGame: null
   }
 
   const { error: gameError } = await supabase
@@ -1145,7 +1434,13 @@ async function joinRoom() {
   const state = gameRow.state || {}
   state.players = state.players || []
 
-  const existingIndex = state.players.findIndex(p => p.id === playerId)
+  const existingIndex = state.players.findIndex(player => player.id === playerId)
+
+  if (state.started && existingIndex === -1) {
+    alert('Partie déjà commencée, impossible de rejoindre maintenant')
+    return
+  }
+
   if (existingIndex === -1) {
     state.players.push({ id: playerId, name: playerName, online: true })
   } else {
@@ -1184,6 +1479,7 @@ async function joinRoom() {
 
 async function startOnlineGame() {
   const roomId = localStorage.getItem('le7_room_id')
+  const playerId = getPlayerId()
 
   if (!roomId) {
     alert('Crée ou rejoins un salon d’abord')
@@ -1204,24 +1500,50 @@ async function startOnlineGame() {
   const state = data.state || {}
   const roomPlayers = state.players || []
 
+  if (state.hostId && state.hostId !== playerId) {
+    alert('Seul le créateur du salon peut lancer la partie')
+    return
+  }
+
   if (roomPlayers.length < 2) {
     alert('Il faut au moins 2 joueurs dans le salon')
     return
   }
 
-  const newState = {
+  const deck = createOnlineDeck()
+  const hands = dealOnlineHands(deck, roomPlayers)
+  const table = makeEmptyOnlineTable()
+  const currentPlayerId = autoPlaceSevenDiamond(hands, roomPlayers, table)
+
+  const scores = {}
+  roomPlayers.forEach(player => {
+    scores[player.id] = 0
+  })
+
+  const nextState = {
     ...state,
     started: true,
-    phase: 'started',
-    message: 'La partie en ligne a commencé',
-    startedAt: new Date().toISOString()
+    phase: 'playing',
+    onlineGame: {
+      players: roomPlayers.map(player => ({
+        id: player.id,
+        name: player.name,
+        online: true
+      })),
+      table,
+      hands,
+      scores,
+      currentPlayerId,
+      winnerId: null,
+      lastAction: 'La manche en ligne a commencé. Le 7♦ a été posé automatiquement.'
+    }
   }
 
   const { data: updatedRows, error: updateError } = await supabase
     .from('games')
     .update({
       started: true,
-      state: newState
+      state: nextState
     })
     .eq('room_id', roomId)
     .select()
@@ -1233,10 +1555,116 @@ async function startOnlineGame() {
 
   const updatedGame = updatedRows && updatedRows[0]
     ? updatedRows[0]
-    : { ...data, started: true, state: newState }
+    : { ...data, started: true, state: nextState }
 
   updateOnlineInfoFromRoom(updatedGame, roomId)
-  alert('Partie en ligne lancée')
+  renderOnlineState(updatedGame.state)
+  alert('Partie en ligne commencée')
+}
+
+async function playOnlineCard(cardId) {
+  const roomId = localStorage.getItem('le7_room_id')
+  const playerId = getPlayerId()
+
+  if (!roomId) return
+
+  const { data, error } = await supabase
+    .from('games')
+    .select('*')
+    .eq('room_id', roomId)
+    .single()
+
+  if (error || !data) {
+    alert('Impossible de charger la partie')
+    return
+  }
+
+  const state = data.state || {}
+  const game = state.onlineGame
+
+  if (!state.started || !game) {
+    alert('Aucune partie en ligne active')
+    return
+  }
+
+  if (game.winnerId) {
+    alert('La manche est déjà terminée')
+    return
+  }
+
+  if (game.currentPlayerId !== playerId) {
+    alert("Ce n'est pas ton tour")
+    return
+  }
+
+  const myHand = [...(game.hands?.[playerId] || [])]
+  const cardIndex = myHand.findIndex(card => card.id === cardId)
+
+  if (cardIndex === -1) return
+
+  const card = myHand[cardIndex]
+  const table = {
+    spades: [...(game.table?.spades || [])],
+    hearts: [...(game.table?.hearts || [])],
+    diamonds: [...(game.table?.diamonds || [])],
+    clubs: [...(game.table?.clubs || [])]
+  }
+
+  if (!isLegalOnlineMove(card, table)) {
+    alert('Carte non jouable')
+    return
+  }
+
+  myHand.splice(cardIndex, 1)
+  sortOnlineHand(myHand)
+
+  table[card.suit] = [...(table[card.suit] || []), card.value].sort((a, b) => a - b)
+
+  const actorName = getPlayerNameById(game.players || [], playerId)
+
+  let nextPlayerId = game.currentPlayerId
+  let winnerId = null
+  let lastAction = actorName + ' joue ' + card.rank + card.symbol
+
+  if (myHand.length === 0) {
+    winnerId = playerId
+    lastAction = actorName + ' gagne la manche'
+  } else {
+    nextPlayerId = getNextPlayerId(game.players || [], playerId)
+  }
+
+  const nextState = {
+    ...state,
+    onlineGame: {
+      ...game,
+      table,
+      hands: {
+        ...game.hands,
+        [playerId]: myHand
+      },
+      currentPlayerId: nextPlayerId,
+      winnerId,
+      lastAction
+    }
+  }
+
+  const { data: updatedRows, error: updateError } = await supabase
+    .from('games')
+    .update({ state: nextState })
+    .eq('room_id', roomId)
+    .select()
+
+  if (updateError) {
+    alert('Erreur jeu : ' + updateError.message)
+    return
+  }
+
+  const updatedGame = updatedRows && updatedRows[0]
+    ? updatedRows[0]
+    : { ...data, state: nextState }
+
+  updateOnlineInfoFromRoom(updatedGame, roomId)
+  renderOnlineState(updatedGame.state)
 }
 
 window.createRoom = createRoom
