@@ -1118,7 +1118,8 @@ window.addEventListener('load', () => {
   watchRoom(roomId)
 }
 
-let roomChannel = 2
+let roomChannel = null
+let roomRefreshInterval = null
 
 function updateOnlineInfoFromRoom(data, roomId) {
   window.onlineRoom = data
