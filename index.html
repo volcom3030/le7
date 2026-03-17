@@ -1201,6 +1201,10 @@ function isLegalOnlineMove(card, table) {
   return !line.includes(card.value) && (card.value === min - 1 || card.value === max + 1)
 }
 
+function hasPlayableOnlineCard(hand, table) {
+  return (hand || []).some(card => isLegalOnlineMove(card, table))
+}
+
 function autoPlaceSevenDiamond(hands, roomPlayers, table) {
   let nextPlayerId = roomPlayers[0]?.id || null
 
@@ -1227,6 +1231,12 @@ function getNextPlayerId(playerList, currentPlayerId) {
   return playerList[(index + 1) % playerList.length]?.id || null
 }
 
+function getPreviousPlayerId(playerList, currentPlayerId) {
+  const index = playerList.findIndex(player => player.id === currentPlayerId)
+  if (index === -1) return playerList[playerList.length - 1]?.id || null
+  return playerList[(index - 1 + playerList.length) % playerList.length]?.id || null
+}
+
 function getPlayerNameById(playerList, playerId) {
   return playerList.find(player => player.id === playerId)?.name || 'Joueur'
 }
@@ -1251,6 +1261,12 @@ function setOnlineInfo(roomId, state, extra = '') {
 
   if (currentTurnName) {
     text += ' | Tour : ' + currentTurnName
+  }
+
+  if (state?.onlineGame?.pendingGive) {
+    const giverName = getPlayerNameById(state.onlineGame.players || [], state.onlineGame.pendingGive.giverId)
+    const requesterName = getPlayerNameById(state.onlineGame.players || [], state.onlineGame.pendingGive.requesterId)
+    text += ' | Don : ' + giverName + ' -> ' + requesterName
   }
 
   if (state?.onlineGame?.winnerId) {
@@ -1323,7 +1339,6 @@ function renderGameState(roomId, state, extra = '') {
   if (!area) return
 
   setOnlineInfo(roomId, state, extra)
-
   if (startBtn) startBtn.classList.add('hidden')
 
   const playerId = getPlayerId()
@@ -1336,14 +1351,21 @@ function renderGameState(roomId, state, extra = '') {
   const winnerId = game.winnerId || null
   const winnerName = winnerId ? getPlayerNameById(playerList, winnerId) : ''
   const currentTurnName = game.currentPlayerId ? getPlayerNameById(playerList, game.currentPlayerId) : ''
+  const pendingGive = game.pendingGive || null
+  const playableCards = myHand.filter(card => isLegalOnlineMove(card, game.table || makeEmptyOnlineTable()))
+  const canAskCard = myTurn && !winnerId && !pendingGive && playableCards.length === 0
 
   const playersHtml = playerList.map(player => {
     const count = (game.hands?.[player.id] || []).length
     const isCurrent = player.id === game.currentPlayerId
     const isMe = player.id === playerId
     const suffix = []
+
     if (isMe) suffix.push('toi')
     if (isCurrent && !winnerId) suffix.push('tour')
+    if (pendingGive?.giverId === player.id) suffix.push('donneur')
+    if (pendingGive?.requesterId === player.id) suffix.push('demande')
+
     return `
       <div class="score" style="margin:4px;">
         ${escapeHtml(player.name)} : ${count} cartes${suffix.length ? ' (' + suffix.join(', ') + ')' : ''}
@@ -1368,8 +1390,66 @@ function renderGameState(roomId, state, extra = '') {
     `
   }).join('')
 
+  let topMessage = ''
+  if (winnerId) {
+    topMessage = 'Manche terminée - gagnant : ' + escapeHtml(winnerName)
+  } else if (pendingGive) {
+    const giverName = getPlayerNameById(playerList, pendingGive.giverId)
+    const requesterName = getPlayerNameById(playerList, pendingGive.requesterId)
+    topMessage = giverName + ' doit donner une carte à ' + requesterName
+  } else {
+    topMessage = 'Tour de ' + escapeHtml(currentTurnName)
+  }
+
+  let actionPanelHtml = ''
+  if (pendingGive) {
+    if (playerId === pendingGive.giverId) {
+      const giverCardsHtml = myHand.map(card => `
+        <button
+          type="button"
+          class="card ${ONLINE_SUIT_CLASS[card.suit]} online-give-card"
+          data-card-id="${card.id}"
+          style="border:0; width:100%;"
+        >
+          <div class="card-rank">${card.rank}</div>
+          <div class="card-suit">${card.symbol}</div>
+        </button>
+      `).join('')
+
+      actionPanelHtml = `
+        <div class="panel" style="margin-bottom:14px;">
+          <div class="panel-title">DONNER UNE CARTE</div>
+          <div style="text-align:center; margin-bottom:10px;">
+            Choisis une carte à donner à ${escapeHtml(getPlayerNameById(playerList, pendingGive.requesterId))}.
+          </div>
+          <div class="hand-grid">
+            ${giverCardsHtml || '<div style="text-align:center; width:100%;">Aucune carte.</div>'}
+          </div>
+        </div>
+      `
+    } else if (playerId === pendingGive.requesterId) {
+      actionPanelHtml = `
+        <div class="panel" style="margin-bottom:14px;">
+          <div class="panel-title">DEMANDE EN COURS</div>
+          <div style="text-align:center;">
+            Attends que ${escapeHtml(getPlayerNameById(playerList, pendingGive.giverId))} te donne une carte.
+          </div>
+        </div>
+      `
+    } else {
+      actionPanelHtml = `
+        <div class="panel" style="margin-bottom:14px;">
+          <div class="panel-title">DEMANDE EN COURS</div>
+          <div style="text-align:center;">
+            ${escapeHtml(getPlayerNameById(playerList, pendingGive.giverId))} doit donner une carte à ${escapeHtml(getPlayerNameById(playerList, pendingGive.requesterId))}.
+          </div>
+        </div>
+      `
+    }
+  }
+
   const handHtml = myHand.map(card => {
-    const playable = myTurn && !winnerId && isLegalOnlineMove(card, game.table || makeEmptyOnlineTable())
+    const playable = myTurn && !winnerId && !pendingGive && isLegalOnlineMove(card, game.table || makeEmptyOnlineTable())
     return `
       <button
         type="button"
@@ -1389,7 +1469,7 @@ function renderGameState(roomId, state, extra = '') {
       <div class="panel-title">PARTIE EN LIGNE</div>
 
       <div style="text-align:center; margin-bottom:12px; font-weight:700;">
-        ${winnerId ? 'Manche terminée - gagnant : ' + escapeHtml(winnerName) : 'Tour de ' + escapeHtml(currentTurnName)}
+        ${topMessage}
       </div>
 
       <div class="score-wrap" style="justify-content:center; margin-bottom:14px;">
@@ -1401,11 +1481,30 @@ function renderGameState(roomId, state, extra = '') {
         <div>${tableHtml}</div>
       </div>
 
+      ${actionPanelHtml}
+
       <div class="panel" style="margin-bottom:0;">
         <div class="panel-title">TA MAIN EN LIGNE</div>
         <div style="text-align:center; margin-bottom:10px;">
-          ${winnerId ? 'La manche est terminée.' : (myTurn ? 'C’est ton tour.' : 'Attends ton tour.')}
+          ${
+            winnerId
+              ? 'La manche est terminée.'
+              : pendingGive
+                ? 'Action en attente.'
+                : myTurn
+                  ? (playableCards.length ? 'C’est ton tour.' : 'Aucune carte jouable.')
+                  : 'Attends ton tour.'
+          }
         </div>
+
+        ${
+          canAskCard
+            ? `<div style="text-align:center; margin-bottom:12px;">
+                 <button type="button" class="primary-btn" id="onlineAskBtn">Demander une carte</button>
+               </div>`
+            : ''
+        }
+
         <div class="hand-grid">
           ${handHtml || '<div style="text-align:center; width:100%;">Aucune carte.</div>'}
         </div>
@@ -1420,6 +1519,17 @@ function renderGameState(roomId, state, extra = '') {
   area.querySelectorAll('.online-play-card').forEach(button => {
     button.addEventListener('click', () => {
       playOnlineCard(button.dataset.cardId)
+    })
+  })
+
+  const askBtn = document.getElementById('onlineAskBtn')
+  if (askBtn) {
+    askBtn.addEventListener('click', requestOnlineCard)
+  }
+
+  area.querySelectorAll('.online-give-card').forEach(button => {
+    button.addEventListener('click', () => {
+      giveOnlineCard(button.dataset.cardId)
     })
   })
 }
@@ -1623,6 +1733,7 @@ async function startOnlineGame() {
       scores,
       currentPlayerId,
       winnerId: null,
+      pendingGive: null,
       lastAction: 'La manche en ligne a commencé. Le 7♦ a été posé automatiquement.'
     }
   }
@@ -1644,6 +1755,157 @@ async function startOnlineGame() {
   await loadRoom(roomId)
 }
 
+async function requestOnlineCard() {
+  const roomId = sessionStorage.getItem('le7_room_id')
+  const playerId = getPlayerId()
+
+  if (!roomId) return
+
+  const gameRow = await fetchRoom(roomId)
+  if (!gameRow) return
+
+  const state = gameRow.state || {}
+  const game = state.onlineGame
+
+  if (!state.started || !game) {
+    alert('Aucune partie en ligne active')
+    return
+  }
+
+  if (game.winnerId) {
+    alert('La manche est déjà terminée')
+    return
+  }
+
+  if (game.pendingGive) {
+    alert('Une demande est déjà en cours')
+    return
+  }
+
+  if (game.currentPlayerId !== playerId) {
+    alert("Ce n'est pas ton tour")
+    return
+  }
+
+  const myHand = [...(game.hands?.[playerId] || [])]
+  if (hasPlayableOnlineCard(myHand, game.table || makeEmptyOnlineTable())) {
+    alert('Tu as déjà une carte jouable')
+    return
+  }
+
+  const giverId = getPreviousPlayerId(game.players || [], playerId)
+  const giverHand = [...(game.hands?.[giverId] || [])]
+
+  if (!giverId || giverHand.length === 0) {
+    alert('Aucune carte à recevoir')
+    return
+  }
+
+  const requesterName = getPlayerNameById(game.players || [], playerId)
+  const giverName = getPlayerNameById(game.players || [], giverId)
+
+  const nextState = {
+    ...state,
+    onlineGame: {
+      ...game,
+      pendingGive: {
+        requesterId: playerId,
+        giverId
+      },
+      lastAction: requesterName + ' demande une carte à ' + giverName
+    }
+  }
+
+  const { error } = await supabase
+    .from('games')
+    .update({ state: nextState })
+    .eq('room_id', roomId)
+
+  if (error) {
+    alert('Erreur demande : ' + error.message)
+    return
+  }
+
+  renderGameState(roomId, nextState)
+}
+
+async function giveOnlineCard(cardId) {
+  const roomId = sessionStorage.getItem('le7_room_id')
+  const playerId = getPlayerId()
+
+  if (!roomId) return
+
+  const gameRow = await fetchRoom(roomId)
+  if (!gameRow) return
+
+  const state = gameRow.state || {}
+  const game = state.onlineGame
+  const pendingGive = game?.pendingGive
+
+  if (!state.started || !game || !pendingGive) {
+    alert('Aucune demande en cours')
+    return
+  }
+
+  if (pendingGive.giverId !== playerId) {
+    alert("Ce n'est pas à toi de donner une carte")
+    return
+  }
+
+  const giverHand = [...(game.hands?.[pendingGive.giverId] || [])]
+  const requesterHand = [...(game.hands?.[pendingGive.requesterId] || [])]
+  const cardIndex = giverHand.findIndex(card => card.id === cardId)
+
+  if (cardIndex === -1) return
+
+  const [card] = giverHand.splice(cardIndex, 1)
+  requesterHand.push(card)
+
+  sortOnlineHand(giverHand)
+  sortOnlineHand(requesterHand)
+
+  const giverName = getPlayerNameById(game.players || [], pendingGive.giverId)
+  const requesterName = getPlayerNameById(game.players || [], pendingGive.requesterId)
+
+  let winnerId = null
+  let currentPlayerId = getNextPlayerId(game.players || [], pendingGive.requesterId)
+  let lastAction = giverName + ' donne une carte à ' + requesterName
+
+  if (giverHand.length === 0) {
+    winnerId = pendingGive.giverId
+    currentPlayerId = pendingGive.giverId
+    lastAction = giverName + ' n’a plus de cartes et gagne la manche'
+  }
+
+  const nextState = {
+    ...state,
+    onlineGame: {
+      ...game,
+      hands: {
+        ...game.hands,
+        [pendingGive.giverId]: giverHand,
+        [pendingGive.requesterId]: requesterHand
+      },
+      pendingGive: null,
+      currentPlayerId,
+      winnerId,
+      lastAction
+    }
+  }
+
+  const { error } = await supabase
+    .from('games')
+    .update({ state: nextState })
+    .eq('room_id', roomId)
+
+  if (error) {
+    alert('Erreur don : ' + error.message)
+    return
+  }
+
+  renderGameState(roomId, nextState)
+}
+
 async function playOnlineCard(cardId) {
   const roomId = sessionStorage.getItem('le7_room_id')
   const playerId = getPlayerId()
@@ -1662,6 +1924,11 @@ async function playOnlineCard(cardId) {
 
   if (!state.started || !game) {
     alert('Aucune partie en ligne active')
+    return
+  }
+
+  if (game.pendingGive) {
+    alert('Une demande de carte est en cours')
     return
   }
 
@@ -1720,6 +1987,7 @@ async function playOnlineCard(cardId) {
       },
       currentPlayerId: nextPlayerId,
       winnerId,
+      pendingGive: null,
       lastAction
     }
   }
