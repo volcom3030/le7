@@ -267,25 +267,25 @@ button, input { font: inherit; }
   <div>Nombre de joueurs</div>
 
   <div class="player-buttons">
-    <button class="player-btn" id="btn1" onclick="setMode(1)">1</button>
-    <button class="player-btn active" id="btn2" onclick="setMode(2)">2</button>
-    <button class="player-btn" id="btn3" onclick="setMode(3)">3</button>
-    <button class="player-btn" id="btn4" onclick="setMode(4)">4</button>
+    <button type="button" class="player-btn" id="btn1" onclick="setMode(1)">1</button>
+    <button type="button" class="player-btn active" id="btn2" onclick="setMode(2)">2</button>
+    <button type="button" class="player-btn" id="btn3" onclick="setMode(3)">3</button>
+    <button type="button" class="player-btn" id="btn4" onclick="setMode(4)">4</button>
   </div>
 
   <div id="botCountWrap" class="hidden" style="text-align:center; margin-bottom:18px;">
     <div style="margin-bottom:10px;">Nombre d'ordinateurs</div>
     <div class="player-buttons" style="margin:0 0 16px;">
-      <button class="player-btn active" id="bot1" onclick="setBotCount(1)">1</button>
-      <button class="player-btn" id="bot2" onclick="setBotCount(2)">2</button>
-      <button class="player-btn" id="bot3" onclick="setBotCount(3)">3</button>
+      <button type="button" class="player-btn active" id="bot1" onclick="setBotCount(1)">1</button>
+      <button type="button" class="player-btn" id="bot2" onclick="setBotCount(2)">2</button>
+      <button type="button" class="player-btn" id="bot3" onclick="setBotCount(3)">3</button>
     </div>
 
     <div style="margin-bottom:10px;">Difficulté des ordinateurs</div>
     <div class="player-buttons" style="margin:0;">
-      <button class="secondary-btn" id="diffEasy" onclick="setBotDifficulty('easy')">Facile</button>
-      <button class="primary-btn" id="diffNormal" onclick="setBotDifficulty('normal')">Normal</button>
-      <button class="secondary-btn" id="diffHard" onclick="setBotDifficulty('hard')">Agressif</button>
+      <button type="button" class="secondary-btn" id="diffEasy" onclick="setBotDifficulty('easy')">Facile</button>
+      <button type="button" class="primary-btn" id="diffNormal" onclick="setBotDifficulty('normal')">Normal</button>
+      <button type="button" class="secondary-btn" id="diffHard" onclick="setBotDifficulty('hard')">Agressif</button>
     </div>
   </div>
 
@@ -294,7 +294,7 @@ button, input { font: inherit; }
   </div>
 
   <div style="margin-top:10px;">
-    <input id="roomCode" placeholder="Code salon" style="padding:10px; border-radius:8px; width:220px; text-transform:uppercase;">
+    <input id="roomCode" placeholder="CODE SALON" style="padding:10px; border-radius:8px; width:220px; text-transform:uppercase;">
   </div>
 
   <div style="margin-top:10px;">
@@ -302,11 +302,11 @@ button, input { font: inherit; }
     <button type="button" class="secondary-btn" onclick="joinRoom()">Rejoindre un salon</button>
   </div>
 
-  <button type="button" class="primary-btn" id="startBtn" style="margin-top:18px;">Commencer local</button>
+  <button type="button" class="primary-btn" id="startBtn" style="margin-top:18px;" onclick="showNamesForm()">Commencer local</button>
   <div style="height:10px"></div>
-  <button type="button" class="secondary-btn" id="instructionsBtn">Instructions</button>
+  <button type="button" class="secondary-btn" id="instructionsBtn" onclick="openInstructions()">Instructions</button>
   <div style="height:10px"></div>
-  <button type="button" class="secondary-btn" id="downloadBtn">Télécharger le jeu</button>
+  <button type="button" class="secondary-btn" id="downloadBtn" onclick="downloadGameFile()">Télécharger le jeu</button>
 </div>
 
 <div id="onlineRoomScreen" class="screen hidden">
@@ -328,14 +328,14 @@ button, input { font: inherit; }
   <input id="name2" placeholder="Joueur 2">
   <input id="name3" placeholder="Joueur 3" class="hidden">
   <input id="name4" placeholder="Joueur 4" class="hidden">
-  <button class="primary-btn" onclick="startGame()">Démarrer</button>
-  <button class="secondary-btn" onclick="backToMenuFromNames()">Retour</button>
+  <button type="button" class="primary-btn" onclick="startGame()">Démarrer</button>
+  <button type="button" class="secondary-btn" onclick="backToMenuFromNames()">Retour</button>
 </div>
 
 <div id="game" class="screen hidden">
   <div class="topbar">
     <div class="score-wrap" id="scores"></div>
-    <button class="secondary-btn" onclick="openMenu()">Menu</button>
+    <button type="button" class="secondary-btn" onclick="openMenu()">Menu</button>
   </div>
 
   <div class="turn-msg" id="turnMsg">Tour</div>
@@ -351,7 +351,7 @@ button, input { font: inherit; }
   </div>
 
   <div class="actions">
-    <button id="askBtn" class="primary-btn hidden" onclick="askCard()">Demander une carte</button>
+    <button type="button" id="askBtn" class="primary-btn hidden" onclick="askCard()">Demander une carte</button>
   </div>
 </div>
 
@@ -359,7 +359,7 @@ button, input { font: inherit; }
   <div class="overlay-card">
     <div class="overlay-title" id="nextTitle">Tour de ...</div>
     <div class="overlay-sub" id="nextSub">Passe l'appareil au bon joueur.</div>
-    <button class="primary-btn" onclick="continueFromNext()">Continuer</button>
+    <button type="button" class="primary-btn" onclick="continueFromNext()">Continuer</button>
   </div>
 </div>
 
@@ -369,7 +369,7 @@ button, input { font: inherit; }
     <div class="overlay-sub" id="giveSub">Le joueur précédent choisit la carte à donner.</div>
     <div id="giveArea" class="give-grid"></div>
     <div class="note">Touchez une carte pour la donner.</div>
-    <button class="close-btn" onclick="closeGiveOverlay()">Annuler</button>
+    <button type="button" class="close-btn" onclick="closeGiveOverlay()">Annuler</button>
   </div>
 </div>
 
@@ -391,7 +391,7 @@ button, input { font: inherit; }
       <p><strong>Mode 1 joueur :</strong> vous pouvez choisir d'affronter 1 à 3 ordinateurs, avec une difficulté facile, normale ou agressive.</p>
       <p><strong>Mode 2 joueurs et plus :</strong> un écran “Continuer” cache la main entre les tours.</p>
     </div>
-    <button class="close-btn" onclick="closeInstructions()">Fermer</button>
+    <button type="button" class="close-btn" onclick="closeInstructions()">Fermer</button>
   </div>
 </div>
 
@@ -399,9 +399,9 @@ button, input { font: inherit; }
   <div class="overlay-card">
     <div class="overlay-title">Menu</div>
     <div class="menu-list">
-      <button class="primary-btn" onclick="newRound()">Nouvelle manche</button>
-      <button class="secondary-btn" onclick="mainMenu()">Menu principal</button>
-      <button class="close-btn" onclick="closeMenu()">Fermer</button>
+      <button type="button" class="primary-btn" onclick="newRound()">Nouvelle manche</button>
+      <button type="button" class="secondary-btn" onclick="mainMenu()">Menu principal</button>
+      <button type="button" class="close-btn" onclick="closeMenu()">Fermer</button>
     </div>
   </div>
 </div>
@@ -975,18 +975,27 @@ function downloadGameFile(){
   }
 }
 
+window.setMode = setMode
+window.setBotCount = setBotCount
+window.setBotDifficulty = setBotDifficulty
+window.showNamesForm = showNamesForm
+window.backToMenuFromNames = backToMenuFromNames
+window.startGame = startGame
+window.openInstructions = openInstructions
+window.closeInstructions = closeInstructions
+window.openMenu = openMenu
+window.closeMenu = closeMenu
+window.newRound = newRound
+window.mainMenu = mainMenu
+window.askCard = askCard
+window.continueFromNext = continueFromNext
+window.closeGiveOverlay = closeGiveOverlay
+window.downloadGameFile = downloadGameFile
+
 window.addEventListener('load', () => {
-  const s = $('startBtn');
-  const i = $('instructionsBtn');
-  const d = $('downloadBtn');
-
-  if (s) s.addEventListener('click', showNamesForm);
-  if (i) i.addEventListener('click', openInstructions);
-  if (d) d.addEventListener('click', downloadGameFile);
-
-  if (!location.hash) setScreen('menu', '#menu');
-  else applyRoute();
-});
+  if (!location.hash) setScreen('menu', '#menu')
+  else applyRoute()
+})
 </script>
 
 <script type="module">
