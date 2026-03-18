@@ -275,6 +275,288 @@ button, input { font: inherit; }
 
   <div id="botCountWrap" class="hidden" style="text-align:center; margin-bottom:18px;">
     <div style="margin-bottom:10px;">Nombre d'ordinateurs</div>
+   Oui — voici le **code complet corrigé** pour ton jeu, avec le menu local réparé, le mode en ligne gardé, et la fonction `checkWinner()` corrigée pour ne plus casser tout le premier script. [file:699][cite:683]
+
+## Fichier complet
+
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Jeu du 7</title>
+<style>
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: linear-gradient(180deg, #0b4b3b 0%, #0a3c31 100%);
+  color: #fff;
+  min-height: 100vh;
+}
+button, input { font: inherit; }
+.hidden { display: none !important; }
+.screen {
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#menu {
+  justify-content: center;
+  text-align: center;
+}
+.suits {
+  font-size: 54px;
+  letter-spacing: 10px;
+  margin-bottom: 10px;
+}
+.title {
+  font-size: 40px;
+  font-weight: 800;
+  margin: 8px 0;
+}
+.player-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 18px 0 28px;
+}
+.player-btn {
+  width: 74px;
+  height: 74px;
+  border-radius: 18px;
+  border: 0;
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  font-size: 28px;
+  font-weight: 800;
+  box-shadow: 0 8px 20px rgba(0,0,0,.28);
+}
+.player-btn.active {
+  background: #ffd84d;
+  color: #111;
+  transform: scale(1.08);
+}
+.primary-btn, .secondary-btn, .close-btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 26px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.primary-btn {
+  background: #ffd84d;
+  color: #111;
+  box-shadow: 0 10px 24px rgba(255,216,77,.35);
+}
+.secondary-btn {
+  background: rgba(255,255,255,.14);
+  color: #fff;
+}
+.close-btn {
+  background: #ffd84d;
+  color: #111;
+}
+#namesForm {
+  justify-content: center;
+  gap: 12px;
+}
+#namesForm input {
+  width: min(290px, 80vw);
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 0;
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  text-align: center;
+}
+#game {
+  padding: 16px;
+}
+.topbar {
+  width: 100%;
+  max-width: 980px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.score-wrap {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.score {
+  background: rgba(255,255,255,.12);
+  border-radius: 999px;
+  padding: 10px 14px;
+  min-width: 80px;
+  text-align: center;
+}
+.turn-msg {
+  width: 100%;
+  max-width: 980px;
+  background: rgba(255,255,255,.12);
+  border-radius: 999px;
+  padding: 14px 18px;
+  text-align: center;
+  margin: 10px 0 16px;
+  font-weight: 700;
+}
+.panel {
+  width: 100%;
+  max-width: 980px;
+  background: rgba(255,255,255,.10);
+  border-radius: 24px;
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.22);
+}
+.panel-title {
+  opacity: .9;
+  margin-bottom: 14px;
+  text-align: center;
+  font-weight: 700;
+}
+.suit-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  min-height: 72px;
+  margin: 10px 0;
+}
+.suit-label {
+  width: 36px;
+  font-size: 28px;
+  font-weight: 800;
+  margin-right: 8px;
+}
+.hand-grid, .give-grid, .room-players {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 12px;
+}
+.room-players {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.card, .table-card {
+  user-select: none;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  font-weight: 800;
+  box-shadow: 0 10px 18px rgba(0,0,0,.24);
+}
+.card {
+  min-height: 122px;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+}
+.card:active { transform: scale(.97); }
+.table-card {
+  width: 58px;
+  height: 84px;
+  margin-left: -14px;
+}
+.table-card:first-of-type { margin-left: 0; }
+.red {
+  background: linear-gradient(180deg, #fff7f7 0%, #f1dddd 100%);
+  color: #c62828;
+}
+.black {
+  background: linear-gradient(180deg, #ffffff 0%, #dddddd 100%);
+  color: #111;
+}
+.card-rank { font-size: 30px; line-height: 1; }
+.card-suit { font-size: 34px; line-height: 1; margin-top: 6px; }
+.table-rank { font-size: 26px; line-height: 1; }
+.table-suit { font-size: 22px; line-height: 1; margin-top: 4px; }
+.highlight {
+  box-shadow: 0 0 0 3px rgba(255,216,77,.9), 0 0 24px rgba(255,216,77,.8);
+  transform: translateY(-2px);
+}
+.disabled {
+  opacity: .52;
+  cursor: not-allowed;
+}
+.actions {
+  margin: 8px 0 24px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.88);
+  z-index: 40;
+  padding: 20px;
+}
+.overlay.show { display: flex; }
+.overlay-card {
+  width: min(520px, 92vw);
+  background: #114d3e;
+  border-radius: 24px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 16px 44px rgba(0,0,0,.45);
+}
+.overlay-title {
+  font-size: 30px;
+  font-weight: 900;
+  margin-bottom: 10px;
+}
+.overlay-sub {
+  opacity: .9;
+  margin-bottom: 18px;
+}
+.menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.note {
+  opacity: .85;
+  font-size: 14px;
+  margin-top: 10px;
+}
+@media (max-width: 560px) {
+  .title { font-size: 32px; }
+  .card { min-height: 112px; }
+  .card-rank { font-size: 28px; }
+  .card-suit { font-size: 32px; }
+  .table-card { width: 52px; height: 78px; }
+}
+</style>
+</head>
+<body>
+
+<div id="menu" class="screen">
+  <div class="suits">♠ ♥ ♦ ♣</div>
+  <div class="title">Jeu du 7</div>
+  <div>Nombre de joueurs</div>
+
+  <div class="player-buttons">
+    <button type="button" class="player-btn" id="btn1" onclick="setMode(1)">1</button>
+    <button type="button" class="player-btn active" id="btn2" onclick="setMode(2)">2</button>
+    <button type="button" class="player-btn" id="btn3" onclick="setMode(3)">3</button>
+    <button type="button" class="player-btn" id="btn4" onclick="setMode(4)">4</button>
+  </div>
+
+  <div id="botCountWrap" class="hidden" style="text-align:center; margin-bottom:18px;">
+    <div style="margin-bottom:10px;">Nombre d'ordinateurs</div>
     <div class="player-buttons" style="margin:0 0 16px;">
       <button type="button" class="player-btn active" id="bot1" onclick="setBotCount(1)">1</button>
       <button type="button" class="player-btn" id="bot2" onclick="setBotCount(2)">2</button>
@@ -432,7 +714,7 @@ let selectedBotCount = 1;
 let botDifficulty = 'normal';
 let totalPlayers = 2;
 let names = [];
-let scores = [0,0,0,0];
+let scores = ;
 let deck = [];
 let players = [];
 let table = [[],[],[],[]];
@@ -541,7 +823,7 @@ function startGame(){
       ($('name4').value || 'Joueur 4').trim()
     ].slice(0, totalPlayers);
   }
-  scores = [0,0,0,0];
+  scores = ;
   setScreen('game', '#game');
   renderScores();
   newRound();
@@ -589,7 +871,7 @@ function autoPlaySevenDiamond(){
   for (let i = 0; i < totalPlayers; i++) {
     const idx = players[i].findIndex(c => c.suit === DIAMOND && c.value === 7);
     if (idx !== -1) {
-      const card = players[i].splice(idx, 1)[0];
+      const card = players[i].splice(idx, 1);
       table[DIAMOND].push(card.value);
       currentPlayer = (i + 1) % totalPlayers;
       players.forEach(sortHand);
@@ -750,7 +1032,7 @@ function placeCard(playerIndex, cardId){
   const hand = players[playerIndex];
   const idx = hand.findIndex(c => c.id === cardId);
   if (idx === -1) return null;
-  const card = hand.splice(idx, 1)[0];
+  const card = hand.splice(idx, 1);
   table[card.suit].push(card.value);
   table[card.suit].sort((a,b) => a - b);
   sortHand(hand);
@@ -774,9 +1056,9 @@ function advanceTurn(){
 
 function chooseBotCard(legalCards){
   if (botDifficulty === 'easy') return legalCards[Math.floor(Math.random() * legalCards.length)];
-  if (botDifficulty === 'hard') return legalCards.sort((a, b) => cardPoints(b) - cardPoints(a))[0];
+  if (botDifficulty === 'hard') return legalCards.sort((a, b) => cardPoints(b) - cardPoints(a));
   const sorted = [...legalCards].sort((a, b) => cardPoints(b) - cardPoints(a));
-  return sorted[0] || legalCards[Math.floor(Math.random() * legalCards.length)];
+  return sorted || legalCards[Math.floor(Math.random() * legalCards.length)];
 }
 
 function chooseCardToGive(giverHand){
@@ -833,7 +1115,7 @@ function botPlayTurn(){
   }
 
   const idx = chooseCardToGive(players[giverIndex]);
-  const card = players[giverIndex].splice(idx, 1)[0];
+  const card = players[giverIndex].splice(idx, 1);
   players[requesterIndex].push(card);
   sortHand(players[giverIndex]);
   sortHand(players[requesterIndex]);
@@ -862,7 +1144,7 @@ function botGiveCardToRequester(){
   const giverHand = players[giverIndex];
   if (giverHand.length === 0) return;
   const idx = chooseCardToGive(giverHand);
-  const card = giverHand.splice(idx, 1)[0];
+  const card = giverHand.splice(idx, 1);
   players[requesterIndex].push(card);
   sortHand(players[giverIndex]);
   sortHand(players[requesterIndex]);
@@ -888,7 +1170,7 @@ function giveChosenCard(cardId){
   const giverHand = players[giverIndex];
   const idx = giverHand.findIndex(c => c.id === cardId);
   if (idx === -1) return;
-  const card = giverHand.splice(idx, 1)[0];
+  const card = giverHand.splice(idx, 1);
   players[requesterIndex].push(card);
   sortHand(players[giverIndex]);
   sortHand(players[requesterIndex]);
@@ -919,13 +1201,24 @@ function checkWinner(){
   for (let i = 0; i < totalPlayers; i++) {
     if (players[i].length === 0) {
       const roundScores = players.map(handPoints);
-      for (let j = 0; j < totalPlayers; j++) scores[j] += roundScores[j];
+
+      for (let j = 0; j < totalPlayers; j++) {
+        scores[j] += roundScores[j];
+      }
+
       renderScores();
-      const lines = roundScores.map((pts, idx) => `${names[idx]} : +${pts} pts (total ${scores[idx]})`).join('
+
+      const lines = roundScores
+        .map((pts, idx) => `${names[idx]} : +${pts} pts (total ${scores[idx]})`)
+        .join('
 ');
+
       const maxScore = Math.max(...scores.slice(0, totalPlayers));
       const minScore = Math.min(...scores.slice(0, totalPlayers));
-      const leaders = names.filter((_, idx) => idx < totalPlayers && scores[idx] === minScore).join(', ');
+      const leaders = names
+        .filter((_, idx) => idx < totalPlayers && scores[idx] === minScore)
+        .join(', ');
+
       setTimeout(() => {
         if (maxScore >= 500) {
           alert(`${names[i]} vide sa main !
@@ -945,6 +1238,7 @@ En tête : ${leaders} avec ${minScore} pts
 La partie continue jusqu'à 500 points.`);
         }
       }, 10);
+
       return true;
     }
   }
@@ -975,27 +1269,27 @@ function downloadGameFile(){
   }
 }
 
-window.setMode = setMode
-window.setBotCount = setBotCount
-window.setBotDifficulty = setBotDifficulty
-window.showNamesForm = showNamesForm
-window.backToMenuFromNames = backToMenuFromNames
-window.startGame = startGame
-window.openInstructions = openInstructions
-window.closeInstructions = closeInstructions
-window.openMenu = openMenu
-window.closeMenu = closeMenu
-window.newRound = newRound
-window.mainMenu = mainMenu
-window.askCard = askCard
-window.continueFromNext = continueFromNext
-window.closeGiveOverlay = closeGiveOverlay
-window.downloadGameFile = downloadGameFile
+window.setMode = setMode;
+window.setBotCount = setBotCount;
+window.setBotDifficulty = setBotDifficulty;
+window.showNamesForm = showNamesForm;
+window.backToMenuFromNames = backToMenuFromNames;
+window.startGame = startGame;
+window.openInstructions = openInstructions;
+window.closeInstructions = closeInstructions;
+window.openMenu = openMenu;
+window.closeMenu = closeMenu;
+window.newRound = newRound;
+window.mainMenu = mainMenu;
+window.askCard = askCard;
+window.continueFromNext = continueFromNext;
+window.closeGiveOverlay = closeGiveOverlay;
+window.downloadGameFile = downloadGameFile;
 
 window.addEventListener('load', () => {
-  if (!location.hash) setScreen('menu', '#menu')
-  else applyRoute()
-})
+  if (!location.hash) setScreen('menu', '#menu');
+  else applyRoute();
+});
 </script>
 
 <script type="module">
@@ -1211,7 +1505,7 @@ function hasPlayableOnlineCard(hand, table) {
 }
 
 function autoPlaceSevenDiamond(hands, roomPlayers, table) {
-  let nextPlayerId = roomPlayers[0]?.id || null
+  let nextPlayerId = roomPlayers?.id || null
 
   for (let i = 0; i < roomPlayers.length; i++) {
     const playerId = roomPlayers[i].id
@@ -1221,7 +1515,7 @@ function autoPlaceSevenDiamond(hands, roomPlayers, table) {
     if (idx !== -1) {
       hand.splice(idx, 1)
       sortOnlineHand(hand)
-      table.diamonds = [7]
+      table.diamonds = 
       nextPlayerId = roomPlayers[(i + 1) % roomPlayers.length].id
       break
     }
@@ -1232,7 +1526,7 @@ function autoPlaceSevenDiamond(hands, roomPlayers, table) {
 
 function getNextPlayerId(playerList, currentPlayerId) {
   const index = playerList.findIndex(player => player.id === currentPlayerId)
-  if (index === -1) return playerList[0]?.id || null
+  if (index === -1) return playerList?.id || null
   return playerList[(index + 1) % playerList.length]?.id || null
 }
 
@@ -1893,7 +2187,7 @@ async function leaveRoom() {
 
   const nextHostId = remainingPlayers.some(player => player.id === (state.hostId || gameRow.host_id))
     ? (state.hostId || gameRow.host_id)
-    : remainingPlayers[0].id
+    : remainingPlayers.id
 
   let nextStarted = !!state.started
   let nextOnlineGame = state.onlineGame || null
@@ -1909,7 +2203,7 @@ async function leaveRoom() {
 
     let nextCurrentPlayerId = nextOnlineGame.currentPlayerId
     if (!remainingPlayers.some(player => player.id === nextCurrentPlayerId)) {
-      nextCurrentPlayerId = remainingPlayers[0]?.id || null
+      nextCurrentPlayerId = remainingPlayers?.id || null
     }
 
     let nextPendingGive = nextOnlineGame.pendingGive || null
@@ -2502,14 +2796,6 @@ if (savedRoomId && roomPaused !== '1') {
   loadRoom(savedRoomId)
 }
 </script>
-<script>
-alert(
-  'setMode = ' + typeof window.setMode + '
-' +
-  'showNamesForm = ' + typeof window.showNamesForm + '
-' +
-  'openInstructions = ' + typeof window.openInstructions
-)
-</script>
+
 </body>
 </html>
