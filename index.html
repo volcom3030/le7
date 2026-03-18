@@ -898,8 +898,8 @@ function checkWinner(){
       renderScores();
 
       const lines = roundScores
-  .map((pts, idx) => `${names[idx]} : +${pts} pts (total ${scores[idx]})`)
-  .join('
+        .map((pts, idx) => `${names[idx]} : +${pts} pts (total ${scores[idx]})`)
+        .join('
 ');
 
       const activeScores = scores.slice(0, totalPlayers);
