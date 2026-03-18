@@ -915,6 +915,7 @@ function handPoints(hand){
   return hand.reduce((sum, card) => sum + cardPoints(card), 0);
 }
 
+<script>
 function checkWinner(){
   for (let i = 0; i < totalPlayers; i++) {
     if (players[i].length === 0) {
@@ -962,6 +963,7 @@ La partie continue jusqu'à 500 points.`);
   }
   return false;
 }
+</script>
 
 function openInstructions(){ $('instructionsOverlay').classList.add('show'); }
 function closeInstructions(){ $('instructionsOverlay').classList.remove('show'); }
