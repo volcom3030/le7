@@ -1,4 +1,6 @@
-<html lang="fr"><head>
+<!DOCTYPE html>
+<html lang="fr">
+<head> 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Jeu du 7</title>
@@ -905,15 +907,28 @@ function checkWinner(){
         scores[j] += roundScores[j];
       }
       renderScores();
-      const lines = roundScores.map((pts, idx) => `${names[idx]} : +${pts} pts (total ${scores[idx]})`).join('\n');
+      const lines = roundScores.map((pts, idx) => `${names[idx]} : +${pts} pts (total ${scores[idx]})`).join('
+');
       const maxScore = Math.max(...scores.slice(0, totalPlayers));
       const minScore = Math.min(...scores.slice(0, totalPlayers));
       const leaders = names.filter((_, idx) => idx < totalPlayers && scores[idx] === minScore).join(', ');
       setTimeout(() => {
         if (maxScore >= 500) {
-          alert(`${names[i]} vide sa main !\n\nPoints de la manche :\n${lines}\n\nFin de partie !\nGagnant : ${leaders} avec ${minScore} pts`);
+          alert(`${names[i]} vide sa main !
+
+Points de la manche :
+${lines}
+
+Fin de partie !
+Gagnant : ${leaders} avec ${minScore} pts`);
         } else {
-          alert(`${names[i]} vide sa main !\n\nPoints de la manche :\n${lines}\n\nEn tête : ${leaders} avec ${minScore} pts\nLa partie continue jusqu'à 500 points.`);
+          alert(`${names[i]} vide sa main !
+
+Points de la manche :
+${lines}
+
+En tête : ${leaders} avec ${minScore} pts
+La partie continue jusqu'à 500 points.`);
         }
       }, 10);
       return true;
@@ -958,175 +973,218 @@ window.addEventListener('load', () => {
 </script>
 
 <script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-  const SUPABASE_URL = 'https://pzrhgekqxaacmawqhxxf.supabase.co'
-  const SUPABASE_KEY = 'sb_publishable_fDFHYtswH0r0XnPCyVjZoA_r3wh5hj6'
+const SUPABASE_URL = 'https://pzrhgekqxaacmawqhxxf.supabase.co'
+const SUPABASE_KEY = 'sb_publishable_fDFHYtswH0r0XnPCyVjZoA_r3wh5hj6'
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
-  window.supabaseClient = supabase
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+window.supabaseClient = supabase
 
-  console.log('Supabase connecté')
+function makeRoomCode(length = 6) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = ''
+  for (let i = 0; i < length; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return code
+}
 
-  function makeRoomCode(length = 6) {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-    let code = ''
-    for (let i = 0; i < length; i++) {
-      code += chars[Math.floor(Math.random() * chars.length)]
-    }
-    return code
+function getPlayerId() {
+  let id = localStorage.getItem('le7_player_id')
+  if (!id) {
+    id = crypto.randomUUID()
+    localStorage.setItem('le7_player_id', id)
+  }
+  return id
+}
+
+function getPlayerName() {
+  const input = document.getElementById('onlineName')
+  const name = input ? input.value.trim() : ''
+  return name || 'Joueur'
+}
+
+let roomRefreshInterval = null
+let roomPollingRoomId = null
+
+function updateOnlineInfoFromRoom(data, roomId) {
+  window.onlineRoom = data
+  const info = document.getElementById('onlineInfo')
+  const roomCodeInput = document.getElementById('roomCode')
+
+  if (roomCodeInput && roomId) {
+    roomCodeInput.value = roomId
   }
 
-  function getPlayerId() {
-    let id = localStorage.getItem('le7_player_id')
-    if (!id) {
-      id = crypto.randomUUID()
-      localStorage.setItem('le7_player_id', id)
-    }
-    return id
+  if (info) {
+    const names = (data.state?.players || []).map(p => p.name).join(', ')
+    info.textContent = 'Salon : ' + roomId + ' | Joueurs : ' + names
+  }
+}
+
+function startRoomPolling(roomId) {
+  if (roomPollingRoomId === roomId && roomRefreshInterval) return
+
+  if (roomRefreshInterval) {
+    clearInterval(roomRefreshInterval)
   }
 
-  function getPlayerName() {
-    const input = document.getElementById('onlineName')
-    const name = input ? input.value.trim() : ''
-    return name || 'Joueur'
-  }
+  roomPollingRoomId = roomId
 
-  async function createRoom() {
-    const playerId = getPlayerId()
-    const playerName = getPlayerName()
-    const roomId = makeRoomCode()
+  roomRefreshInterval = setInterval(async () => {
+    const currentRoomId = localStorage.getItem('le7_room_id')
+    if (!currentRoomId) return
 
-    const initialState = {
-      roomId,
-      hostId: playerId,
-      started: false,
-      currentPlayer: 0,
-      players: [{ id: playerId, name: playerName, online: true }],
-      table: { spades: [], hearts: [], diamonds: [], clubs: [] },
-      hands: {},
-      deck: [],
-      scores: {},
-      pendingGiveCard: null
-    }
-
-    const { error: gameError } = await supabase
-      .from('games')
-      .insert({
-        room_id: roomId,
-        host_id: playerId,
-        started: false,
-        state: initialState
-      })
-
-    if (gameError) {
-      alert('Erreur création salon : ' + gameError.message)
-      return
-    }
-
-    const { error: playerError } = await supabase
-      .from('players')
-      .insert({
-        id: playerId,
-        room_id: roomId,
-        name: playerName,
-        connected: true
-      })
-
-    if (playerError) {
-      alert('Erreur ajout joueur : ' + playerError.message)
-      return
-    }
-
-    localStorage.setItem('le7_room_id', roomId)
-    alert('Salon créé : ' + roomId)
-    await loadRoom(roomId)
-  }
-
-  async function joinRoom() {
-    const playerId = getPlayerId()
-    const playerName = getPlayerName()
-    const roomInput = document.getElementById('roomCode')
-    const roomId = roomInput ? roomInput.value.trim().toUpperCase() : ''
-
-    if (!roomId) {
-      alert('Entre un code de salon')
-      return
-    }
-
-    const { data: gameRow, error: gameError } = await supabase
-      .from('games')
-      .select('*')
-      .eq('room_id', roomId)
-      .single()
-
-    if (gameError || !gameRow) {
-      alert('Salon introuvable')
-      return
-    }
-
-    const state = gameRow.state || {}
-    state.players = state.players || []
-
-    const alreadyInRoom = state.players.some(p => p.id === playerId)
-    if (!alreadyInRoom) {
-      state.players.push({ id: playerId, name: playerName, online: true })
-    }
-
-    const { error: playerError } = await supabase
-      .from('players')
-      .upsert({
-        id: playerId,
-        room_id: roomId,
-        name: playerName,
-        connected: true
-      })
-
-    if (playerError) {
-      alert('Erreur ajout joueur : ' + playerError.message)
-      return
-    }
-
-    const { error: updateError } = await supabase
-      .from('games')
-      .update({ state })
-      .eq('room_id', roomId)
-
-    if (updateError) {
-      alert('Erreur mise à jour salon : ' + updateError.message)
-      return
-    }
-
-    localStorage.setItem('le7_room_id', roomId)
-    alert('Salon rejoint : ' + roomId)
-    await loadRoom(roomId)
-  }
-
-  async function loadRoom(roomId) {
     const { data, error } = await supabase
       .from('games')
       .select('*')
-      .eq('room_id', roomId)
+      .eq('room_id', currentRoomId)
       .single()
 
-    if (error || !data) {
-      alert('Impossible de charger le salon')
-      return
-    }
+    if (error || !data) return
 
-    window.onlineRoom = data
+    updateOnlineInfoFromRoom(data, currentRoomId)
+  }, 2000)
+}
 
-    const info = document.getElementById('onlineInfo')
-    if (info) {
-      const names = (data.state?.players || []).map(p => p.name).join(', ')
-      info.textContent = 'Salon : ' + roomId + ' | Joueurs : ' + names
-    }
+async function loadRoom(roomId) {
+  const { data, error } = await supabase
+    .from('games')
+    .select('*')
+    .eq('room_id', roomId)
+    .single()
+
+  if (error || !data) {
+    alert('Impossible de charger le salon')
+    return
   }
 
-  window.createRoom = createRoom
-  window.joinRoom = joinRoom
+  updateOnlineInfoFromRoom(data, roomId)
+  startRoomPolling(roomId)
+}
+
+async function createRoom() {
+  const playerId = getPlayerId()
+  const playerName = getPlayerName()
+  const roomId = makeRoomCode()
+
+  const initialState = {
+    roomId,
+    hostId: playerId,
+    started: false,
+    currentPlayer: 0,
+    players: [{ id: playerId, name: playerName, online: true }],
+    table: { spades: [], hearts: [], diamonds: [], clubs: [] },
+    hands: {},
+    deck: [],
+    scores: {},
+    pendingGiveCard: null
+  }
+
+  const { error: gameError } = await supabase
+    .from('games')
+    .upsert({
+      room_id: roomId,
+      host_id: playerId,
+      started: false,
+      state: initialState
+    })
+
+  if (gameError) {
+    alert('Erreur création salon : ' + gameError.message)
+    return
+  }
+
+  const { error: playerError } = await supabase
+    .from('players')
+    .upsert({
+      id: playerId,
+      room_id: roomId,
+      name: playerName,
+      connected: true
+    })
+
+  if (playerError) {
+    alert('Erreur ajout joueur : ' + playerError.message)
+    return
+  }
+
+  localStorage.setItem('le7_room_id', roomId)
+  alert('Salon créé : ' + roomId)
+  await loadRoom(roomId)
+}
+
+async function joinRoom() {
+  const playerId = getPlayerId()
+  const playerName = getPlayerName()
+  const roomInput = document.getElementById('roomCode')
+  const roomId = roomInput ? roomInput.value.trim().toUpperCase() : ''
+
+  if (!roomId) {
+    alert('Entre un code de salon')
+    return
+  }
+
+  const { data: gameRow, error: gameError } = await supabase
+    .from('games')
+    .select('*')
+    .eq('room_id', roomId)
+    .single()
+
+  if (gameError || !gameRow) {
+    alert('Salon introuvable')
+    return
+  }
+
+  const state = gameRow.state || {}
+  state.players = state.players || []
+
+  const existingIndex = state.players.findIndex(p => p.id === playerId)
+  if (existingIndex === -1) {
+    state.players.push({ id: playerId, name: playerName, online: true })
+  } else {
+    state.players[existingIndex].name = playerName
+    state.players[existingIndex].online = true
+  }
+
+  const { error: playerError } = await supabase
+    .from('players')
+    .upsert({
+      id: playerId,
+      room_id: roomId,
+      name: playerName,
+      connected: true
+    })
+
+  if (playerError) {
+    alert('Erreur ajout joueur : ' + playerError.message)
+    return
+  }
+
+  const { error: updateError } = await supabase
+    .from('games')
+    .update({ state })
+    .eq('room_id', roomId)
+
+  if (updateError) {
+    alert('Erreur mise à jour salon : ' + updateError.message)
+    return
+  }
+
+  localStorage.setItem('le7_room_id', roomId)
+  alert('Salon rejoint : ' + roomId)
+  await loadRoom(roomId)
+}
+
+window.createRoom = createRoom
+window.joinRoom = joinRoom
+
+const savedRoomId = localStorage.getItem('le7_room_id')
+if (savedRoomId) {
+  loadRoom(savedRoomId)
+}
 </script>
 
-
-
-</body></html>
+</body>
+</html>
