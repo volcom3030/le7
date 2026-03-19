@@ -1,9 +1,7 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
+<html lang="fr"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Jeu du 7 - Local</title>
+<title>Jeu du 7</title>
 <style>
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 body {
@@ -15,7 +13,6 @@ body {
 }
 button, input { font: inherit; }
 .hidden { display: none !important; }
-
 .screen {
   min-height: 100vh;
   padding: 20px;
@@ -23,24 +20,24 @@ button, input { font: inherit; }
   flex-direction: column;
   align-items: center;
 }
-
 #menu {
   justify-content: center;
   text-align: center;
 }
-
 .suits {
   font-size: 54px;
   letter-spacing: 10px;
   margin-bottom: 10px;
 }
-
 .title {
   font-size: 40px;
   font-weight: 800;
   margin: 8px 0;
 }
-
+.subtitle {
+  opacity: .9;
+  margin-bottom: 24px;
+}
 .player-buttons {
   display: flex;
   gap: 12px;
@@ -48,7 +45,6 @@ button, input { font: inherit; }
   justify-content: center;
   margin: 18px 0 28px;
 }
-
 .player-btn {
   width: 74px;
   height: 74px;
@@ -60,13 +56,11 @@ button, input { font: inherit; }
   font-weight: 800;
   box-shadow: 0 8px 20px rgba(0,0,0,.28);
 }
-
 .player-btn.active {
   background: #ffd84d;
   color: #111;
   transform: scale(1.08);
 }
-
 .primary-btn, .secondary-btn, .close-btn {
   border: 0;
   border-radius: 999px;
@@ -74,28 +68,23 @@ button, input { font: inherit; }
   font-weight: 800;
   cursor: pointer;
 }
-
 .primary-btn {
   background: #ffd84d;
   color: #111;
   box-shadow: 0 10px 24px rgba(255,216,77,.35);
 }
-
 .secondary-btn {
   background: rgba(255,255,255,.14);
   color: #fff;
 }
-
 .close-btn {
   background: #ffd84d;
   color: #111;
 }
-
 #namesForm {
   justify-content: center;
   gap: 12px;
 }
-
 #namesForm input {
   width: min(290px, 80vw);
   padding: 14px 16px;
@@ -105,11 +94,9 @@ button, input { font: inherit; }
   color: #fff;
   text-align: center;
 }
-
 #game {
   padding: 16px;
 }
-
 .topbar {
   width: 100%;
   max-width: 980px;
@@ -119,13 +106,11 @@ button, input { font: inherit; }
   gap: 10px;
   margin-bottom: 12px;
 }
-
 .score-wrap {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
-
 .score {
   background: rgba(255,255,255,.12);
   border-radius: 999px;
@@ -133,7 +118,6 @@ button, input { font: inherit; }
   min-width: 80px;
   text-align: center;
 }
-
 .turn-msg {
   width: 100%;
   max-width: 980px;
@@ -144,7 +128,6 @@ button, input { font: inherit; }
   margin: 10px 0 16px;
   font-weight: 700;
 }
-
 .panel {
   width: 100%;
   max-width: 980px;
@@ -154,14 +137,12 @@ button, input { font: inherit; }
   margin-bottom: 16px;
   box-shadow: 0 8px 24px rgba(0,0,0,.22);
 }
-
 .panel-title {
   opacity: .9;
   margin-bottom: 14px;
   text-align: center;
   font-weight: 700;
 }
-
 .suit-line {
   display: flex;
   align-items: center;
@@ -170,20 +151,17 @@ button, input { font: inherit; }
   min-height: 72px;
   margin: 10px 0;
 }
-
 .suit-label {
   width: 36px;
   font-size: 28px;
   font-weight: 800;
   margin-right: 8px;
 }
-
 .hand-grid, .give-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
   gap: 12px;
 }
-
 .card, .table-card {
   user-select: none;
   border-radius: 14px;
@@ -194,48 +172,38 @@ button, input { font: inherit; }
   font-weight: 800;
   box-shadow: 0 10px 18px rgba(0,0,0,.24);
 }
-
 .card {
   min-height: 122px;
   cursor: pointer;
   transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
 }
-
 .card:active { transform: scale(.97); }
-
 .table-card {
   width: 58px;
   height: 84px;
   margin-left: -14px;
 }
-
 .table-card:first-of-type { margin-left: 0; }
-
 .red {
   background: linear-gradient(180deg, #fff7f7 0%, #f1dddd 100%);
   color: #c62828;
 }
-
 .black {
   background: linear-gradient(180deg, #ffffff 0%, #dddddd 100%);
   color: #111;
 }
-
 .card-rank { font-size: 30px; line-height: 1; }
 .card-suit { font-size: 34px; line-height: 1; margin-top: 6px; }
 .table-rank { font-size: 26px; line-height: 1; }
 .table-suit { font-size: 22px; line-height: 1; margin-top: 4px; }
-
 .highlight {
   box-shadow: 0 0 0 3px rgba(255,216,77,.9), 0 0 24px rgba(255,216,77,.8);
   transform: translateY(-2px);
 }
-
 .disabled {
   opacity: .52;
   cursor: not-allowed;
 }
-
 .actions {
   margin: 8px 0 24px;
   display: flex;
@@ -243,7 +211,6 @@ button, input { font: inherit; }
   flex-wrap: wrap;
   justify-content: center;
 }
-
 .overlay {
   position: fixed;
   inset: 0;
@@ -254,9 +221,7 @@ button, input { font: inherit; }
   z-index: 40;
   padding: 20px;
 }
-
 .overlay.show { display: flex; }
-
 .overlay-card {
   width: min(520px, 92vw);
   background: #114d3e;
@@ -265,30 +230,25 @@ button, input { font: inherit; }
   text-align: center;
   box-shadow: 0 16px 44px rgba(0,0,0,.45);
 }
-
 .overlay-title {
   font-size: 30px;
   font-weight: 900;
   margin-bottom: 10px;
 }
-
 .overlay-sub {
   opacity: .9;
   margin-bottom: 18px;
 }
-
 .menu-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-
 .note {
   opacity: .85;
   font-size: 14px;
   margin-top: 10px;
 }
-
 @media (max-width: 560px) {
   .title { font-size: 32px; }
   .card { min-height: 112px; }
@@ -306,33 +266,48 @@ button, input { font: inherit; }
   <div>Nombre de joueurs</div>
 
   <div class="player-buttons">
-    <button type="button" class="player-btn" id="btn1" onclick="setMode(1)">1</button>
-    <button type="button" class="player-btn active" id="btn2" onclick="setMode(2)">2</button>
-    <button type="button" class="player-btn" id="btn3" onclick="setMode(3)">3</button>
-    <button type="button" class="player-btn" id="btn4" onclick="setMode(4)">4</button>
+    <button class="player-btn" id="btn1" onclick="setMode(1)">1</button>
+    <button class="player-btn active" id="btn2" onclick="setMode(2)">2</button>
+    <button class="player-btn" id="btn3" onclick="setMode(3)">3</button>
+    <button class="player-btn" id="btn4" onclick="setMode(4)">4</button>
   </div>
 
   <div id="botCountWrap" class="hidden" style="text-align:center; margin-bottom:18px;">
     <div style="margin-bottom:10px;">Nombre d'ordinateurs</div>
     <div class="player-buttons" style="margin:0 0 16px;">
-      <button type="button" class="player-btn active" id="bot1" onclick="setBotCount(1)">1</button>
-      <button type="button" class="player-btn" id="bot2" onclick="setBotCount(2)">2</button>
-      <button type="button" class="player-btn" id="bot3" onclick="setBotCount(3)">3</button>
+      <button class="player-btn active" id="bot1" onclick="setBotCount(1)">1</button>
+      <button class="player-btn" id="bot2" onclick="setBotCount(2)">2</button>
+      <button class="player-btn" id="bot3" onclick="setBotCount(3)">3</button>
     </div>
 
     <div style="margin-bottom:10px;">Difficulté des ordinateurs</div>
     <div class="player-buttons" style="margin:0;">
-      <button type="button" class="secondary-btn" id="diffEasy" onclick="setBotDifficulty('easy')">Facile</button>
-      <button type="button" class="primary-btn" id="diffNormal" onclick="setBotDifficulty('normal')">Normal</button>
-      <button type="button" class="secondary-btn" id="diffHard" onclick="setBotDifficulty('hard')">Agressif</button>
+      <button class="secondary-btn" id="diffEasy" onclick="setBotDifficulty('easy')">Facile</button>
+      <button class="primary-btn" id="diffNormal" onclick="setBotDifficulty('normal')">Normal</button>
+      <button class="secondary-btn" id="diffHard" onclick="setBotDifficulty('hard')">Agressif</button>
     </div>
   </div>
 
-  <button type="button" class="primary-btn" id="startBtn" style="margin-top:18px;" onclick="showNamesForm()">Commencer local</button>
+  <div style="margin-top:16px;">
+    <input id="onlineName" placeholder="Ton nom" style="padding:10px; border-radius:8px; width:220px;">
+  </div>
+
+  <div style="margin-top:10px;">
+    <input id="roomCode" placeholder="Code salon" style="padding:10px; border-radius:8px; width:220px; text-transform:uppercase;">
+  </div>
+
+  <div style="margin-top:10px;">
+    <button type="button" class="secondary-btn" onclick="createRoom()">Créer un salon</button>
+    <button type="button" class="secondary-btn" onclick="joinRoom()">Rejoindre un salon</button>
+  </div>
+
+  <div id="onlineInfo" style="margin-top:10px;"></div>
+
+  <button type="button" class="primary-btn" id="startBtn">Commencer</button>
   <div style="height:10px"></div>
-  <button type="button" class="secondary-btn" id="instructionsBtn" onclick="openInstructions()">Instructions</button>
+  <button type="button" class="secondary-btn" id="instructionsBtn">Instructions</button>
   <div style="height:10px"></div>
-  <button type="button" class="secondary-btn" id="downloadBtn" onclick="downloadGameFile()">Télécharger le jeu</button>
+  <button type="button" class="secondary-btn" id="downloadBtn">Télécharger le jeu</button>
 </div>
 
 <div id="namesForm" class="screen hidden">
@@ -341,14 +316,14 @@ button, input { font: inherit; }
   <input id="name2" placeholder="Joueur 2">
   <input id="name3" placeholder="Joueur 3" class="hidden">
   <input id="name4" placeholder="Joueur 4" class="hidden">
-  <button type="button" class="primary-btn" onclick="startGame()">Démarrer</button>
-  <button type="button" class="secondary-btn" onclick="backToMenuFromNames()">Retour</button>
+  <button class="primary-btn" onclick="startGame()">Démarrer</button>
+  <button class="secondary-btn" onclick="backToMenuFromNames()">Retour</button>
 </div>
 
 <div id="game" class="screen hidden">
   <div class="topbar">
     <div class="score-wrap" id="scores"></div>
-    <button type="button" class="secondary-btn" onclick="openMenu()">Menu</button>
+    <button class="secondary-btn" onclick="openMenu()">Menu</button>
   </div>
 
   <div class="turn-msg" id="turnMsg">Tour</div>
@@ -364,7 +339,7 @@ button, input { font: inherit; }
   </div>
 
   <div class="actions">
-    <button type="button" id="askBtn" class="primary-btn hidden" onclick="askCard()">Demander une carte</button>
+    <button id="askBtn" class="primary-btn hidden" onclick="askCard()">Demander une carte</button>
   </div>
 </div>
 
@@ -372,7 +347,7 @@ button, input { font: inherit; }
   <div class="overlay-card">
     <div class="overlay-title" id="nextTitle">Tour de ...</div>
     <div class="overlay-sub" id="nextSub">Passe l'appareil au bon joueur.</div>
-    <button type="button" class="primary-btn" onclick="continueFromNext()">Continuer</button>
+    <button class="primary-btn" onclick="continueFromNext()">Continuer</button>
   </div>
 </div>
 
@@ -382,7 +357,7 @@ button, input { font: inherit; }
     <div class="overlay-sub" id="giveSub">Le joueur précédent choisit la carte à donner.</div>
     <div id="giveArea" class="give-grid"></div>
     <div class="note">Touchez une carte pour la donner.</div>
-    <button type="button" class="close-btn" onclick="closeGiveOverlay()">Annuler</button>
+    <button class="close-btn" onclick="closeGiveOverlay()">Annuler</button>
   </div>
 </div>
 
@@ -395,12 +370,16 @@ button, input { font: inherit; }
       <p><strong>Carreau prioritaire :</strong> pour jouer une carte d'une autre couleur, le même rang en carreau doit déjà être posé sur la table.</p>
       <p><strong>Exemple :</strong> vous ne pouvez jouer un 7♣ que si le 7♦ est déjà sur la table, un 8♥ seulement si le 8♦ est déjà posé.</p>
       <p><strong>Suite normale :</strong> dans une couleur, on joue seulement la carte juste en dessous ou juste au-dessus des cartes déjà posées.</p>
-      <p><strong>Si un joueur est bloqué :</strong> le joueur précédent choisit une carte à lui donner.</p>
-      <p><strong>IA bloquée :</strong> elle ne choisit pas elle-même une carte ; le joueur précédent doit lui en donner une, puis son tour se termine.</p>
-      <p><strong>Points :</strong> As = 20, cartes 2 à 9 = 5, cartes 10 à R = 10.</p>
-      <p><strong>Fin de partie :</strong> la partie continue jusqu'à 500 points, et le gagnant est celui qui en a le moins.</p>
+      <p><strong>Si un joueur est bloqué :</strong> le joueur précédent choisit une carte à lui donner. Si une IA est bloquée, elle ne prend pas elle-même une carte ; le joueur précédent doit choisir la carte à lui donner, puis le tour de l'IA se termine immédiatement après la réception.</p>
+      <p><strong>Points :</strong> à la fin d’une manche, on compte les cartes restantes dans la main de chaque joueur.</p>
+      <p><strong>Valeur des cartes :</strong> As = 20 points, cartes de 2 à 9 = 5 points chacune, cartes de 10 à R = 10 points chacune.</p>
+      <p><strong>But :</strong> avoir le moins de points possible au fil des manches.</p>
+      <p><strong>Fin de manche :</strong> dès qu’un joueur vide sa main, la manche s’arrête et les autres joueurs comptent leurs points restants.</p>
+      <p><strong>Fin de partie :</strong> la partie continue jusqu’à ce qu’au moins un joueur atteigne 500 points ou plus. Le gagnant final est celui qui a le moins de points.</p>
+      <p><strong>Mode 1 joueur :</strong> vous pouvez choisir d'affronter 1 à 3 ordinateurs, avec une difficulté facile, normale ou agressive.</p>
+      <p><strong>Mode 2 joueurs et plus :</strong> un écran “Continuer” cache la main entre les tours.</p>
     </div>
-    <button type="button" class="close-btn" onclick="closeInstructions()">Fermer</button>
+    <button class="close-btn" onclick="closeInstructions()">Fermer</button>
   </div>
 </div>
 
@@ -408,9 +387,9 @@ button, input { font: inherit; }
   <div class="overlay-card">
     <div class="overlay-title">Menu</div>
     <div class="menu-list">
-      <button type="button" class="primary-btn" onclick="newRound()">Nouvelle manche</button>
-      <button type="button" class="secondary-btn" onclick="mainMenu()">Menu principal</button>
-      <button type="button" class="close-btn" onclick="closeMenu()">Fermer</button>
+      <button class="primary-btn" onclick="newRound()">Nouvelle manche</button>
+      <button class="secondary-btn" onclick="mainMenu()">Menu principal</button>
+      <button class="close-btn" onclick="closeMenu()">Fermer</button>
     </div>
   </div>
 </div>
@@ -419,8 +398,8 @@ button, input { font: inherit; }
 const SUITS = ['♠', '♥', '♦', '♣'];
 const SUIT_CLASS = ['black', 'red', 'red', 'black'];
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'V', 'D', 'R'];
-const VALUE_BY_RANK = { A:1, '2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, '10':10, V:11, D:12, R:13 };
-const RANK_BY_VALUE = { 1:'A', 2:'2', 3:'3', 4:'4', 5:'5', 6:'6', 7:'7', 8:'8', 9:'9', 10:'10', 11:'V', 12:'D', 13:'R' };
+const VALUE_BY_RANK = {A:1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,V:11,D:12,R:13};
+const RANK_BY_VALUE = {1:'A',2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'V',12:'D',13:'R'};
 const DIAMOND = 2;
 
 let selectedMode = 2;
@@ -438,17 +417,6 @@ let giverIndex = -1;
 let pendingReturnToRequester = false;
 
 function $(id){ return document.getElementById(id); }
-
-function hideAllMainScreens() {
-  $('menu').classList.add('hidden');
-  $('namesForm').classList.add('hidden');
-  $('game').classList.add('hidden');
-}
-
-function showScreen(screenId) {
-  hideAllMainScreens();
-  $(screenId).classList.remove('hidden');
-}
 
 function setMode(n){
   selectedMode = n;
@@ -473,22 +441,28 @@ function setBotDifficulty(level){
 }
 
 function showNamesForm(){
-  showScreen('namesForm');
-  $('name1').placeholder = selectedMode === 1 ? 'Ton nom' : 'Joueur 1';
-  $('name2').classList.toggle('hidden', selectedMode === 1);
+  $('menu').classList.add('hidden');
+  $('namesForm').classList.remove('hidden');
+  $('name2').classList.toggle('hidden', selectedMode < 2 || selectedMode === 1);
   $('name3').classList.toggle('hidden', selectedMode < 3);
   $('name4').classList.toggle('hidden', selectedMode < 4);
+  if (selectedMode === 1) {
+    $('name2').classList.add('hidden');
+  }
 }
 
 function backToMenuFromNames(){
-  showScreen('menu');
+  $('namesForm').classList.add('hidden');
+  $('menu').classList.remove('hidden');
 }
 
 function startGame(){
   if (selectedMode === 1) {
     totalPlayers = selectedBotCount + 1;
     names = [($('name1').value || 'Vous').trim()];
-    for (let i = 1; i <= selectedBotCount; i++) names.push(`IA ${i}`);
+    for (let i = 1; i <= selectedBotCount; i++) {
+      names.push(`IA ${i}`);
+    }
   } else {
     totalPlayers = selectedMode;
     names = [
@@ -498,9 +472,9 @@ function startGame(){
       ($('name4').value || 'Joueur 4').trim()
     ].slice(0, totalPlayers);
   }
-
   scores = [0,0,0,0];
-  showScreen('game');
+  $('namesForm').classList.add('hidden');
+  $('game').classList.remove('hidden');
   renderScores();
   newRound();
 }
@@ -522,7 +496,13 @@ function createDeck(){
   let id = 1;
   for (let suit = 0; suit < 4; suit++) {
     for (const rank of RANKS) {
-      deck.push({ id: id++, suit, symbol: SUITS[suit], rank, value: VALUE_BY_RANK[rank] });
+      deck.push({
+        id: id++,
+        suit,
+        symbol: SUITS[suit],
+        rank,
+        value: VALUE_BY_RANK[rank]
+      });
     }
   }
   for (let i = deck.length - 1; i > 0; i--) {
@@ -568,19 +548,26 @@ function isLegalMove(card){
   if (!card) return false;
 
   if (card.suit === DIAMOND) {
-    if (totalPlayedCount() === 0) return card.value === 7;
-    if (table[DIAMOND].length === 0) return false;
-
+    if (totalPlayedCount() === 0) {
+      return card.value === 7;
+    }
+    if (table[DIAMOND].length === 0) {
+      return false;
+    }
     const line = table[DIAMOND];
     const min = Math.min(...line);
     const max = Math.max(...line);
     return !line.includes(card.value) && (card.value === min - 1 || card.value === max + 1);
   }
 
-  if (!diamondRankUnlocked(card.value)) return false;
+  if (!diamondRankUnlocked(card.value)) {
+    return false;
+  }
 
   const line = table[card.suit];
-  if (line.length === 0) return card.value === 7;
+  if (line.length === 0) {
+    return card.value === 7;
+  }
 
   const min = Math.min(...line);
   const max = Math.max(...line);
@@ -613,7 +600,6 @@ function renderScores(){
 function renderTable(){
   const area = $('tableArea');
   area.innerHTML = '';
-
   for (let suit = 0; suit < 4; suit++) {
     const row = document.createElement('div');
     row.className = 'suit-line';
@@ -639,7 +625,9 @@ function createCardElement(card, playable, clickHandler){
   const el = document.createElement('div');
   el.className = `card ${SUIT_CLASS[card.suit]} ${playable ? 'highlight' : 'disabled'}`;
   el.innerHTML = `<div class="card-rank">${card.rank}</div><div class="card-suit">${card.symbol}</div>`;
-  if (playable) el.onclick = clickHandler;
+  if (playable) {
+    el.onclick = clickHandler;
+  }
   return el;
 }
 
@@ -659,7 +647,6 @@ function renderHand(){
 
   const hand = players[currentPlayer];
   $('handTitle').textContent = `Main de ${names[currentPlayer]} (${hand.length} cartes)`;
-
   hand.forEach(card => {
     const playable = isLegalMove(card);
     const el = createCardElement(card, playable, () => playCardFromCurrent(card.id));
@@ -691,7 +678,9 @@ function prepareTurn(){
     $('handTitle').textContent = 'Main cachée';
     $('handArea').innerHTML = '';
     $('askBtn').classList.add('hidden');
-    $('nextTitle').textContent = pendingReturnToRequester ? `Retour à ${names[currentPlayer]}` : `Tour de ${names[currentPlayer]}`;
+    $('nextTitle').textContent = pendingReturnToRequester
+      ? `Retour à ${names[currentPlayer]}`
+      : `Tour de ${names[currentPlayer]}`;
     $('nextSub').textContent = 'Passe l’appareil au bon joueur.';
     $('nextOverlay').classList.add('show');
     pendingReturnToRequester = false;
@@ -699,7 +688,9 @@ function prepareTurn(){
   }
 
   renderVisibleTurn();
-  if (isBot(currentPlayer)) setTimeout(botPlayTurn, 850);
+  if (isBot(currentPlayer)) {
+    setTimeout(botPlayTurn, 850);
+  }
 }
 
 function continueFromNext(){
@@ -711,7 +702,6 @@ function placeCard(playerIndex, cardId){
   const hand = players[playerIndex];
   const idx = hand.findIndex(c => c.id === cardId);
   if (idx === -1) return null;
-
   const card = hand.splice(idx, 1)[0];
   table[card.suit].push(card.value);
   table[card.suit].sort((a,b) => a - b);
@@ -721,13 +711,10 @@ function placeCard(playerIndex, cardId){
 
 function playCardFromCurrent(cardId){
   if (isBot(currentPlayer)) return;
-
   const hand = players[currentPlayer];
   const card = hand.find(c => c.id === cardId);
   if (!isLegalMove(card)) return;
-
   placeCard(currentPlayer, cardId);
-
   if (checkWinner()) return;
   advanceTurn();
 }
@@ -743,7 +730,7 @@ function chooseBotCard(legalCards){
   }
 
   if (botDifficulty === 'hard') {
-    return [...legalCards].sort((a, b) => cardPoints(b) - cardPoints(a))[0];
+    return legalCards.sort((a, b) => cardPoints(b) - cardPoints(a))[0];
   }
 
   const sorted = [...legalCards].sort((a, b) => cardPoints(b) - cardPoints(a));
@@ -751,7 +738,22 @@ function chooseBotCard(legalCards){
 }
 
 function chooseCardToGive(giverHand){
-  if (botDifficulty === 'easy') return Math.floor(Math.random() * giverHand.length);
+  if (botDifficulty === 'easy') {
+    return Math.floor(Math.random() * giverHand.length);
+  }
+
+  if (botDifficulty === 'hard') {
+    let bestIndex = 0;
+    let bestScore = -1;
+    giverHand.forEach((card, idx) => {
+      const score = cardPoints(card);
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = idx;
+      }
+    });
+    return bestIndex;
+  }
 
   let bestIndex = 0;
   let bestScore = -1;
@@ -818,11 +820,6 @@ function askCard(){
   requesterIndex = currentPlayer;
   giverIndex = (currentPlayer - 1 + totalPlayers) % totalPlayers;
 
-  if (players[giverIndex].length === 0) {
-    alert(`${names[giverIndex]} n'a plus de carte à donner.`);
-    return;
-  }
-
   if (isBot(giverIndex)) {
     botGiveCardToRequester();
     return;
@@ -837,24 +834,23 @@ function askCard(){
 function botGiveCardToRequester(){
   const giverHand = players[giverIndex];
   if (giverHand.length === 0) return;
-
   const idx = chooseCardToGive(giverHand);
   const card = giverHand.splice(idx, 1)[0];
   players[requesterIndex].push(card);
   sortHand(players[giverIndex]);
   sortHand(players[requesterIndex]);
-
   if (checkWinner()) return;
   currentPlayer = (requesterIndex + 1) % totalPlayers;
-
-  if (isHumanMulti()) prepareTurn();
-  else renderVisibleTurn();
+  if (isHumanMulti()) {
+    prepareTurn();
+  } else {
+    renderVisibleTurn();
+  }
 }
 
 function renderGiveCards(){
   const area = $('giveArea');
   area.innerHTML = '';
-
   players[giverIndex].forEach(card => {
     const el = document.createElement('div');
     el.className = `card ${SUIT_CLASS[card.suit]}`;
@@ -868,20 +864,23 @@ function giveChosenCard(cardId){
   const giverHand = players[giverIndex];
   const idx = giverHand.findIndex(c => c.id === cardId);
   if (idx === -1) return;
-
   const card = giverHand.splice(idx, 1)[0];
   players[requesterIndex].push(card);
   sortHand(players[giverIndex]);
   sortHand(players[requesterIndex]);
   $('giveOverlay').classList.remove('show');
-
   if (checkWinner()) return;
   currentPlayer = (requesterIndex + 1) % totalPlayers;
   pendingReturnToRequester = false;
-
-  if (isHumanMulti()) prepareTurn();
-  else if (isBot(requesterIndex)) prepareTurn();
-  else renderVisibleTurn();
+  if (isHumanMulti()) {
+    prepareTurn();
+  } else {
+    if (isBot(requesterIndex)) {
+      prepareTurn();
+    } else {
+      renderVisibleTurn();
+    }
+  }
 }
 
 function closeGiveOverlay(){
@@ -902,82 +901,44 @@ function checkWinner(){
   for (let i = 0; i < totalPlayers; i++) {
     if (players[i].length === 0) {
       const roundScores = players.map(handPoints);
-
       for (let j = 0; j < totalPlayers; j++) {
         scores[j] += roundScores[j];
       }
-
       renderScores();
-
-      const lines = roundScores
-        .map((pts, idx) => `${names[idx]} : +${pts} pts (total ${scores[idx]})`)
-        .join('
-');
-
+      const lines = roundScores.map((pts, idx) => `${names[idx]} : +${pts} pts (total ${scores[idx]})`).join('\n');
       const maxScore = Math.max(...scores.slice(0, totalPlayers));
       const minScore = Math.min(...scores.slice(0, totalPlayers));
-      const leaders = names
-        .filter((_, idx) => idx < totalPlayers && scores[idx] === minScore)
-        .join(', ');
-
+      const leaders = names.filter((_, idx) => idx < totalPlayers && scores[idx] === minScore).join(', ');
       setTimeout(() => {
         if (maxScore >= 500) {
-          alert(`${names[i]} vide sa main !
-
-Points de la manche :
-${lines}
-
-Fin de partie !
-Gagnant : ${leaders} avec ${minScore} pts`);
-          mainMenu();
+          alert(`${names[i]} vide sa main !\n\nPoints de la manche :\n${lines}\n\nFin de partie !\nGagnant : ${leaders} avec ${minScore} pts`);
         } else {
-          alert(`${names[i]} vide sa main !
-
-Points de la manche :
-${lines}
-
-En tête : ${leaders} avec ${minScore} pts
-La partie continue jusqu'à 500 points.`);
-          newRound();
+          alert(`${names[i]} vide sa main !\n\nPoints de la manche :\n${lines}\n\nEn tête : ${leaders} avec ${minScore} pts\nLa partie continue jusqu'à 500 points.`);
         }
       }, 10);
-
       return true;
     }
   }
   return false;
 }
 
-function openInstructions(){
-  $('instructionsOverlay').classList.add('show');
-}
-
-function closeInstructions(){
-  $('instructionsOverlay').classList.remove('show');
-}
-
-function openMenu(){
-  $('menuOverlay').classList.add('show');
-}
-
-function closeMenu(){
-  $('menuOverlay').classList.remove('show');
-}
-
+function openInstructions(){ $('instructionsOverlay').classList.add('show'); }
+function closeInstructions(){ $('instructionsOverlay').classList.remove('show'); }
+function openMenu(){ $('menuOverlay').classList.add('show'); }
+function closeMenu(){ $('menuOverlay').classList.remove('show'); }
 function mainMenu(){
   closeMenu();
-  $('nextOverlay').classList.remove('show');
-  $('giveOverlay').classList.remove('show');
-  showScreen('menu');
+  $('game').classList.add('hidden');
+  $('namesForm').classList.add('hidden');
+  $('menu').classList.remove('hidden');
 }
-
 function downloadGameFile(){
   try {
     const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'jeu_du_7_local.html';
+    a.download = 'jeu_du_7.html';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -986,11 +947,186 @@ function downloadGameFile(){
     alert('Téléchargement non disponible');
   }
 }
-
 window.addEventListener('load', () => {
-  showScreen('menu');
+  const s = $('startBtn');
+  const i = $('instructionsBtn');
+  const d = $('downloadBtn');
+  if (s) s.addEventListener('click', showNamesForm);
+  if (i) i.addEventListener('click', openInstructions);
+  if (d) d.addEventListener('click', downloadGameFile);
 });
 </script>
 
-</body>
-</html>
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+  const SUPABASE_URL = 'https://pzrhgekqxaacmawqhxxf.supabase.co'
+  const SUPABASE_KEY = 'sb_publishable_fDFHYtswH0r0XnPCyVjZoA_r3wh5hj6'
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+  window.supabaseClient = supabase
+
+  console.log('Supabase connecté')
+
+  function makeRoomCode(length = 6) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    let code = ''
+    for (let i = 0; i < length; i++) {
+      code += chars[Math.floor(Math.random() * chars.length)]
+    }
+    return code
+  }
+
+  function getPlayerId() {
+    let id = localStorage.getItem('le7_player_id')
+    if (!id) {
+      id = crypto.randomUUID()
+      localStorage.setItem('le7_player_id', id)
+    }
+    return id
+  }
+
+  function getPlayerName() {
+    const input = document.getElementById('onlineName')
+    const name = input ? input.value.trim() : ''
+    return name || 'Joueur'
+  }
+
+  async function createRoom() {
+    const playerId = getPlayerId()
+    const playerName = getPlayerName()
+    const roomId = makeRoomCode()
+
+    const initialState = {
+      roomId,
+      hostId: playerId,
+      started: false,
+      currentPlayer: 0,
+      players: [{ id: playerId, name: playerName, online: true }],
+      table: { spades: [], hearts: [], diamonds: [], clubs: [] },
+      hands: {},
+      deck: [],
+      scores: {},
+      pendingGiveCard: null
+    }
+
+    const { error: gameError } = await supabase
+      .from('games')
+      .insert({
+        room_id: roomId,
+        host_id: playerId,
+        started: false,
+        state: initialState
+      })
+
+    if (gameError) {
+      alert('Erreur création salon : ' + gameError.message)
+      return
+    }
+
+    const { error: playerError } = await supabase
+      .from('players')
+      .insert({
+        id: playerId,
+        room_id: roomId,
+        name: playerName,
+        connected: true
+      })
+
+    if (playerError) {
+      alert('Erreur ajout joueur : ' + playerError.message)
+      return
+    }
+
+    localStorage.setItem('le7_room_id', roomId)
+    alert('Salon créé : ' + roomId)
+    await loadRoom(roomId)
+  }
+
+  async function joinRoom() {
+    const playerId = getPlayerId()
+    const playerName = getPlayerName()
+    const roomInput = document.getElementById('roomCode')
+    const roomId = roomInput ? roomInput.value.trim().toUpperCase() : ''
+
+    if (!roomId) {
+      alert('Entre un code de salon')
+      return
+    }
+
+    const { data: gameRow, error: gameError } = await supabase
+      .from('games')
+      .select('*')
+      .eq('room_id', roomId)
+      .single()
+
+    if (gameError || !gameRow) {
+      alert('Salon introuvable')
+      return
+    }
+
+    const state = gameRow.state || {}
+    state.players = state.players || []
+
+    const alreadyInRoom = state.players.some(p => p.id === playerId)
+    if (!alreadyInRoom) {
+      state.players.push({ id: playerId, name: playerName, online: true })
+    }
+
+    const { error: playerError } = await supabase
+      .from('players')
+      .upsert({
+        id: playerId,
+        room_id: roomId,
+        name: playerName,
+        connected: true
+      })
+
+    if (playerError) {
+      alert('Erreur ajout joueur : ' + playerError.message)
+      return
+    }
+
+    const { error: updateError } = await supabase
+      .from('games')
+      .update({ state })
+      .eq('room_id', roomId)
+
+    if (updateError) {
+      alert('Erreur mise à jour salon : ' + updateError.message)
+      return
+    }
+
+    localStorage.setItem('le7_room_id', roomId)
+    alert('Salon rejoint : ' + roomId)
+    await loadRoom(roomId)
+  }
+
+  async function loadRoom(roomId) {
+    const { data, error } = await supabase
+      .from('games')
+      .select('*')
+      .eq('room_id', roomId)
+      .single()
+
+    if (error || !data) {
+      alert('Impossible de charger le salon')
+      return
+    }
+
+    window.onlineRoom = data
+
+    const info = document.getElementById('onlineInfo')
+    if (info) {
+      const names = (data.state?.players || []).map(p => p.name).join(', ')
+      info.textContent = 'Salon : ' + roomId + ' | Joueurs : ' + names
+    }
+  }
+
+  window.createRoom = createRoom
+  window.joinRoom = joinRoom
+</script>
+
+
+
+</body></html>
