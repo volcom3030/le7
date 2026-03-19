@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head> 
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Jeu du 7</title>
@@ -35,10 +35,6 @@ button, input { font: inherit; }
   font-size: 40px;
   font-weight: 800;
   margin: 8px 0;
-}
-.subtitle {
-  opacity: .9;
-  margin-bottom: 24px;
 }
 .player-buttons {
   display: flex;
@@ -159,10 +155,13 @@ button, input { font: inherit; }
   font-weight: 800;
   margin-right: 8px;
 }
-.hand-grid, .give-grid {
+.hand-grid, .give-grid, .room-players {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
   gap: 12px;
+}
+.room-players {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 .card, .table-card {
   user-select: none;
@@ -303,13 +302,23 @@ button, input { font: inherit; }
     <button type="button" class="secondary-btn" onclick="joinRoom()">Rejoindre un salon</button>
   </div>
 
-  <div id="onlineInfo" style="margin-top:10px;"></div>
-
-  <button type="button" class="primary-btn" id="startBtn">Commencer</button>
+  <button type="button" class="primary-btn" id="startBtn" style="margin-top:18px;">Commencer local</button>
   <div style="height:10px"></div>
   <button type="button" class="secondary-btn" id="instructionsBtn">Instructions</button>
   <div style="height:10px"></div>
   <button type="button" class="secondary-btn" id="downloadBtn">Télécharger le jeu</button>
+</div>
+
+<div id="onlineRoomScreen" class="screen hidden">
+  <div class="title">Salon en ligne</div>
+  <div id="onlineInfo" class="turn-msg" style="max-width:980px;"></div>
+
+  <div class="actions">
+    <button type="button" class="primary-btn" id="onlineStartBtn">Commencer en ligne</button>
+    <button type="button" class="secondary-btn" onclick="goToMenuScreen()">Retour au menu</button>
+  </div>
+
+  <div id="onlineGameArea" style="width:min(980px,100%); margin-top:14px;"></div>
 </div>
 
 <div id="namesForm" class="screen hidden">
@@ -420,6 +429,56 @@ let pendingReturnToRequester = false;
 
 function $(id){ return document.getElementById(id); }
 
+function hideAllMainScreens() {
+  $('menu').classList.add('hidden');
+  $('namesForm').classList.add('hidden');
+  $('game').classList.add('hidden');
+  $('onlineRoomScreen').classList.add('hidden');
+}
+
+function showScreen(screenId) {
+  hideAllMainScreens();
+  $(screenId).classList.remove('hidden');
+}
+
+function setScreen(screenId, hashValue) {
+  showScreen(screenId);
+  if (hashValue && location.hash !== hashValue) {
+    history.replaceState(null, '', hashValue);
+  }
+}
+
+function applyRoute() {
+  const hash = location.hash || '#menu';
+
+  if (hash === '#online-room') {
+    showScreen('onlineRoomScreen');
+    return;
+  }
+  if (hash === '#names') {
+    showScreen('namesForm');
+    return;
+  }
+  if (hash === '#game') {
+    showScreen('game');
+    return;
+  }
+  showScreen('menu');
+}
+
+function openOnlineRoomScreen() {
+  setScreen('onlineRoomScreen', '#online-room');
+}
+
+function goToMenuScreen() {
+  setScreen('menu', '#menu');
+}
+
+window.openOnlineRoomScreen = openOnlineRoomScreen;
+window.goToMenuScreen = goToMenuScreen;
+
+window.addEventListener('hashchange', applyRoute);
+
 function setMode(n){
   selectedMode = n;
   ['btn1','btn2','btn3','btn4'].forEach((id, idx) => {
@@ -443,8 +502,7 @@ function setBotDifficulty(level){
 }
 
 function showNamesForm(){
-  $('menu').classList.add('hidden');
-  $('namesForm').classList.remove('hidden');
+  setScreen('namesForm', '#names');
   $('name2').classList.toggle('hidden', selectedMode < 2 || selectedMode === 1);
   $('name3').classList.toggle('hidden', selectedMode < 3);
   $('name4').classList.toggle('hidden', selectedMode < 4);
@@ -454,8 +512,7 @@ function showNamesForm(){
 }
 
 function backToMenuFromNames(){
-  $('namesForm').classList.add('hidden');
-  $('menu').classList.remove('hidden');
+  setScreen('menu', '#menu');
 }
 
 function startGame(){
@@ -475,8 +532,7 @@ function startGame(){
     ].slice(0, totalPlayers);
   }
   scores = [0,0,0,0];
-  $('namesForm').classList.add('hidden');
-  $('game').classList.remove('hidden');
+  setScreen('game', '#game');
   renderScores();
   newRound();
 }
@@ -550,26 +606,18 @@ function isLegalMove(card){
   if (!card) return false;
 
   if (card.suit === DIAMOND) {
-    if (totalPlayedCount() === 0) {
-      return card.value === 7;
-    }
-    if (table[DIAMOND].length === 0) {
-      return false;
-    }
+    if (totalPlayedCount() === 0) return card.value === 7;
+    if (table[DIAMOND].length === 0) return false;
     const line = table[DIAMOND];
     const min = Math.min(...line);
     const max = Math.max(...line);
     return !line.includes(card.value) && (card.value === min - 1 || card.value === max + 1);
   }
 
-  if (!diamondRankUnlocked(card.value)) {
-    return false;
-  }
+  if (!diamondRankUnlocked(card.value)) return false;
 
   const line = table[card.suit];
-  if (line.length === 0) {
-    return card.value === 7;
-  }
+  if (line.length === 0) return card.value === 7;
 
   const min = Math.min(...line);
   const max = Math.max(...line);
@@ -627,9 +675,7 @@ function createCardElement(card, playable, clickHandler){
   const el = document.createElement('div');
   el.className = `card ${SUIT_CLASS[card.suit]} ${playable ? 'highlight' : 'disabled'}`;
   el.innerHTML = `<div class="card-rank">${card.rank}</div><div class="card-suit">${card.symbol}</div>`;
-  if (playable) {
-    el.onclick = clickHandler;
-  }
+  if (playable) el.onclick = clickHandler;
   return el;
 }
 
@@ -680,9 +726,7 @@ function prepareTurn(){
     $('handTitle').textContent = 'Main cachée';
     $('handArea').innerHTML = '';
     $('askBtn').classList.add('hidden');
-    $('nextTitle').textContent = pendingReturnToRequester
-      ? `Retour à ${names[currentPlayer]}`
-      : `Tour de ${names[currentPlayer]}`;
+    $('nextTitle').textContent = pendingReturnToRequester ? `Retour à ${names[currentPlayer]}` : `Tour de ${names[currentPlayer]}`;
     $('nextSub').textContent = 'Passe l’appareil au bon joueur.';
     $('nextOverlay').classList.add('show');
     pendingReturnToRequester = false;
@@ -690,9 +734,7 @@ function prepareTurn(){
   }
 
   renderVisibleTurn();
-  if (isBot(currentPlayer)) {
-    setTimeout(botPlayTurn, 850);
-  }
+  if (isBot(currentPlayer)) setTimeout(botPlayTurn, 850);
 }
 
 function continueFromNext(){
@@ -730,11 +772,9 @@ function chooseBotCard(legalCards){
   if (botDifficulty === 'easy') {
     return legalCards[Math.floor(Math.random() * legalCards.length)];
   }
-
   if (botDifficulty === 'hard') {
     return legalCards.sort((a, b) => cardPoints(b) - cardPoints(a))[0];
   }
-
   const sorted = [...legalCards].sort((a, b) => cardPoints(b) - cardPoints(a));
   return sorted[0] || legalCards[Math.floor(Math.random() * legalCards.length)];
 }
@@ -742,19 +782,6 @@ function chooseBotCard(legalCards){
 function chooseCardToGive(giverHand){
   if (botDifficulty === 'easy') {
     return Math.floor(Math.random() * giverHand.length);
-  }
-
-  if (botDifficulty === 'hard') {
-    let bestIndex = 0;
-    let bestScore = -1;
-    giverHand.forEach((card, idx) => {
-      const score = cardPoints(card);
-      if (score > bestScore) {
-        bestScore = score;
-        bestIndex = idx;
-      }
-    });
-    return bestIndex;
   }
 
   let bestIndex = 0;
@@ -843,11 +870,8 @@ function botGiveCardToRequester(){
   sortHand(players[requesterIndex]);
   if (checkWinner()) return;
   currentPlayer = (requesterIndex + 1) % totalPlayers;
-  if (isHumanMulti()) {
-    prepareTurn();
-  } else {
-    renderVisibleTurn();
-  }
+  if (isHumanMulti()) prepareTurn();
+  else renderVisibleTurn();
 }
 
 function renderGiveCards(){
@@ -874,15 +898,9 @@ function giveChosenCard(cardId){
   if (checkWinner()) return;
   currentPlayer = (requesterIndex + 1) % totalPlayers;
   pendingReturnToRequester = false;
-  if (isHumanMulti()) {
-    prepareTurn();
-  } else {
-    if (isBot(requesterIndex)) {
-      prepareTurn();
-    } else {
-      renderVisibleTurn();
-    }
-  }
+  if (isHumanMulti()) prepareTurn();
+  else if (isBot(requesterIndex)) prepareTurn();
+  else renderVisibleTurn();
 }
 
 function closeGiveOverlay(){
@@ -943,9 +961,7 @@ function openMenu(){ $('menuOverlay').classList.add('show'); }
 function closeMenu(){ $('menuOverlay').classList.remove('show'); }
 function mainMenu(){
   closeMenu();
-  $('game').classList.add('hidden');
-  $('namesForm').classList.add('hidden');
-  $('menu').classList.remove('hidden');
+  setScreen('menu', '#menu');
 }
 function downloadGameFile(){
   try {
@@ -962,13 +978,18 @@ function downloadGameFile(){
     alert('Téléchargement non disponible');
   }
 }
+
 window.addEventListener('load', () => {
   const s = $('startBtn');
   const i = $('instructionsBtn');
   const d = $('downloadBtn');
+
   if (s) s.addEventListener('click', showNamesForm);
   if (i) i.addEventListener('click', openInstructions);
   if (d) d.addEventListener('click', downloadGameFile);
+
+  if (!location.hash) setScreen('menu', '#menu');
+  else applyRoute();
 });
 </script>
 
@@ -979,7 +1000,73 @@ const SUPABASE_URL = 'https://pzrhgekqxaacmawqhxxf.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_fDFHYtswH0r0XnPCyVjZoA_r3wh5hj6'
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
-window.supabaseClient = supabase
+
+const ONLINE_SUITS = ['spades', 'hearts', 'diamonds', 'clubs']
+const ONLINE_SUIT_SYMBOL = {
+  spades: '♠',
+  hearts: '♥',
+  diamonds: '♦',
+  clubs: '♣'
+}
+const ONLINE_SUIT_CLASS = {
+  spades: 'black',
+  hearts: 'red',
+  diamonds: 'red',
+  clubs: 'black'
+}
+const ONLINE_RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'V', 'D', 'R']
+const ONLINE_VALUE_BY_RANK = {
+  A: 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,
+  '8': 8, '9': 9, '10': 10, V: 11, D: 12, R: 13
+}
+const ONLINE_RANK_BY_VALUE = {
+  1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7',
+  8: '8', 9: '9', 10: '10', 11: 'V', 12: 'D', 13: 'R'
+}
+
+let roomRefreshInterval = null
+let roomPollingRoomId = null
+
+function getPlayerId() {
+  let id = sessionStorage.getItem('le7_player_id')
+  if (!id) {
+    id = 'p_' + Math.random().toString(36).slice(2) + Date.now().toString(36)
+    sessionStorage.setItem('le7_player_id', id)
+  }
+  return id
+}
+
+function getPlayerName() {
+  const input = document.getElementById('onlineName')
+  const value = input ? input.value.trim() : ''
+  return value || 'Joueur'
+}
+
+function escapeHtml(value = '') {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+}
+
+function openOnlineRoomScreenSafe() {
+  if (window.openOnlineRoomScreen) {
+    window.openOnlineRoomScreen()
+    return
+  }
+
+  const menu = document.getElementById('menu')
+  const namesForm = document.getElementById('namesForm')
+  const game = document.getElementById('game')
+  const onlineRoomScreen = document.getElementById('onlineRoomScreen')
+
+  if (menu) menu.classList.add('hidden')
+  if (namesForm) namesForm.classList.add('hidden')
+  if (game) game.classList.add('hidden')
+  if (onlineRoomScreen) onlineRoomScreen.classList.remove('hidden')
+}
 
 function makeRoomCode(length = 6) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -990,37 +1077,387 @@ function makeRoomCode(length = 6) {
   return code
 }
 
-function getPlayerId() {
-  let id = localStorage.getItem('le7_player_id')
-  if (!id) {
-    id = crypto.randomUUID()
-    localStorage.setItem('le7_player_id', id)
+function normalizePlayers(players = []) {
+  const seen = new Map()
+
+  players.forEach(player => {
+    if (!player || !player.id) return
+    seen.set(player.id, {
+      id: player.id,
+      name: (player.name || 'Joueur').trim() || 'Joueur',
+      online: player.online !== false
+    })
+  })
+
+  return [...seen.values()]
+}
+
+function upsertPlayerInState(players, player) {
+  const list = normalizePlayers(players)
+  const index = list.findIndex(p => p.id === player.id)
+
+  if (index === -1) {
+    list.push({
+      id: player.id,
+      name: player.name || 'Joueur',
+      online: true
+    })
+  } else {
+    list[index] = {
+      ...list[index],
+      name: player.name || list[index].name || 'Joueur',
+      online: true
+    }
   }
-  return id
+
+  return normalizePlayers(list)
 }
 
-function getPlayerName() {
-  const input = document.getElementById('onlineName')
-  const name = input ? input.value.trim() : ''
-  return name || 'Joueur'
+function makeEmptyOnlineTable() {
+  return {
+    spades: [],
+    hearts: [],
+    diamonds: [],
+    clubs: []
+  }
 }
 
-let roomRefreshInterval = null
-let roomPollingRoomId = null
+function suitIndex(suit) {
+  return ONLINE_SUITS.indexOf(suit)
+}
 
-function updateOnlineInfoFromRoom(data, roomId) {
-  window.onlineRoom = data
+function sortOnlineHand(hand) {
+  hand.sort((a, b) => {
+    const suitDiff = suitIndex(a.suit) - suitIndex(b.suit)
+    if (suitDiff !== 0) return suitDiff
+    return a.value - b.value
+  })
+}
+
+function createOnlineDeck() {
+  const deck = []
+  let id = 1
+
+  for (const suit of ONLINE_SUITS) {
+    for (const rank of ONLINE_RANKS) {
+      deck.push({
+        id: 'c' + id++,
+        suit,
+        symbol: ONLINE_SUIT_SYMBOL[suit],
+        rank,
+        value: ONLINE_VALUE_BY_RANK[rank]
+      })
+    }
+  }
+
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[deck[i], deck[j]] = [deck[j], deck[i]]
+  }
+
+  return deck
+}
+
+function dealOnlineHands(deck, roomPlayers) {
+  const hands = {}
+  roomPlayers.forEach(player => {
+    hands[player.id] = []
+  })
+  deck.forEach((card, index) => {
+    const player = roomPlayers[index % roomPlayers.length]
+    hands[player.id].push(card)
+  })
+  Object.values(hands).forEach(sortOnlineHand)
+  return hands
+}
+
+function totalPlayedCount(table) {
+  return ONLINE_SUITS.reduce((sum, suit) => sum + ((table[suit] || []).length), 0)
+}
+
+function diamondRankUnlocked(table, value) {
+  return (table.diamonds || []).includes(value)
+}
+
+function isLegalOnlineMove(card, table) {
+  if (!card) return false
+
+  if (card.suit === 'diamonds') {
+    if (totalPlayedCount(table) === 0) return card.value === 7
+    const line = table.diamonds || []
+    if (line.length === 0) return false
+    const min = Math.min(...line)
+    const max = Math.max(...line)
+    return !line.includes(card.value) && (card.value === min - 1 || card.value === max + 1)
+  }
+
+  if (!diamondRankUnlocked(table, card.value)) return false
+
+  const line = table[card.suit] || []
+  if (line.length === 0) return card.value === 7
+
+  const min = Math.min(...line)
+  const max = Math.max(...line)
+  return !line.includes(card.value) && (card.value === min - 1 || card.value === max + 1)
+}
+
+function autoPlaceSevenDiamond(hands, roomPlayers, table) {
+  let nextPlayerId = roomPlayers[0]?.id || null
+
+  for (let i = 0; i < roomPlayers.length; i++) {
+    const playerId = roomPlayers[i].id
+    const hand = hands[playerId] || []
+    const idx = hand.findIndex(card => card.suit === 'diamonds' && card.value === 7)
+
+    if (idx !== -1) {
+      hand.splice(idx, 1)
+      sortOnlineHand(hand)
+      table.diamonds = [7]
+      nextPlayerId = roomPlayers[(i + 1) % roomPlayers.length].id
+      break
+    }
+  }
+
+  return nextPlayerId
+}
+
+function getNextPlayerId(playerList, currentPlayerId) {
+  const index = playerList.findIndex(player => player.id === currentPlayerId)
+  if (index === -1) return playerList[0]?.id || null
+  return playerList[(index + 1) % playerList.length]?.id || null
+}
+
+function getPlayerNameById(playerList, playerId) {
+  return playerList.find(player => player.id === playerId)?.name || 'Joueur'
+}
+
+function setOnlineInfo(roomId, state, extra = '') {
   const info = document.getElementById('onlineInfo')
   const roomCodeInput = document.getElementById('roomCode')
+  const roomPlayers = normalizePlayers(state.players || [])
+  const names = roomPlayers.map(player => player.name).join(', ')
+  const currentTurnName = state?.onlineGame?.currentPlayerId
+    ? getPlayerNameById(state.onlineGame.players || [], state.onlineGame.currentPlayerId)
+    : ''
 
-  if (roomCodeInput && roomId) {
+  if (roomCodeInput) {
     roomCodeInput.value = roomId
   }
 
-  if (info) {
-    const names = (data.state?.players || []).map(p => p.name).join(', ')
-    info.textContent = 'Salon : ' + roomId + ' | Joueurs : ' + names
+  if (!info) return
+
+  let text = 'Salon : ' + roomId + ' | Joueurs : ' + (names || 'aucun')
+  text += state.started ? ' | Statut : partie lancée' : ' | Statut : en attente'
+
+  if (currentTurnName) {
+    text += ' | Tour : ' + currentTurnName
   }
+
+  if (state?.onlineGame?.winnerId) {
+    text += ' | Gagnant : ' + getPlayerNameById(state.onlineGame.players || [], state.onlineGame.winnerId)
+  }
+
+  if (extra) {
+    text += ' | ' + extra
+  }
+
+  info.textContent = text
+}
+
+function renderWaitingRoom(roomId, state, extra = '') {
+  openOnlineRoomScreenSafe()
+
+  const area = document.getElementById('onlineGameArea')
+  const startBtn = document.getElementById('onlineStartBtn')
+  const playerId = getPlayerId()
+  const hostId = state.hostId || null
+  const roomPlayers = normalizePlayers(state.players || [])
+  const isHost = hostId === playerId
+
+  setOnlineInfo(roomId, state, extra)
+
+  const playersHtml = roomPlayers.map(player => {
+    const isMe = player.id === playerId
+    const isHostPlayer = player.id === hostId
+    return `
+      <div class="score">
+        ${escapeHtml(player.name)}${isMe ? ' (toi)' : ''}${isHostPlayer ? ' (hôte)' : ''}
+      </div>
+    `
+  }).join('')
+
+  if (area) {
+    area.innerHTML = `
+      <div class="panel">
+        <div class="panel-title">SALON</div>
+        <div style="text-align:center; margin-bottom:14px;">
+          ${roomPlayers.length < 2 ? 'En attente d’au moins 2 joueurs.' : 'Le salon est prêt.'}
+        </div>
+        <div class="room-players" style="margin-bottom:14px;">
+          ${playersHtml || '<div class="score">Aucun joueur.</div>'}
+        </div>
+        <div style="text-align:center; opacity:.9;">
+          ${isHost ? 'Tu es l’hôte du salon.' : 'Seul l’hôte peut lancer la partie.'}
+        </div>
+      </div>
+    `
+  }
+
+  if (startBtn) {
+    if (isHost) {
+      startBtn.classList.remove('hidden')
+      startBtn.disabled = roomPlayers.length < 2
+      startBtn.style.opacity = roomPlayers.length < 2 ? '.6' : '1'
+      startBtn.style.cursor = roomPlayers.length < 2 ? 'not-allowed' : 'pointer'
+    } else {
+      startBtn.classList.add('hidden')
+    }
+  }
+}
+
+function renderGameState(roomId, state, extra = '') {
+  openOnlineRoomScreenSafe()
+
+  const area = document.getElementById('onlineGameArea')
+  const startBtn = document.getElementById('onlineStartBtn')
+  if (!area) return
+
+  setOnlineInfo(roomId, state, extra)
+
+  if (startBtn) startBtn.classList.add('hidden')
+
+  const playerId = getPlayerId()
+  const game = state.onlineGame
+  const playerList = game.players || []
+  const myHand = [...(game.hands?.[playerId] || [])]
+  sortOnlineHand(myHand)
+
+  const myTurn = game.currentPlayerId === playerId
+  const winnerId = game.winnerId || null
+  const winnerName = winnerId ? getPlayerNameById(playerList, winnerId) : ''
+  const currentTurnName = game.currentPlayerId ? getPlayerNameById(playerList, game.currentPlayerId) : ''
+
+  const playersHtml = playerList.map(player => {
+    const count = (game.hands?.[player.id] || []).length
+    const isCurrent = player.id === game.currentPlayerId
+    const isMe = player.id === playerId
+    const suffix = []
+    if (isMe) suffix.push('toi')
+    if (isCurrent && !winnerId) suffix.push('tour')
+    return `
+      <div class="score" style="margin:4px;">
+        ${escapeHtml(player.name)} : ${count} cartes${suffix.length ? ' (' + suffix.join(', ') + ')' : ''}
+      </div>
+    `
+  }).join('')
+
+  const tableHtml = ONLINE_SUITS.map(suit => {
+    const values = [...(game.table?.[suit] || [])].sort((a, b) => a - b)
+    const cards = values.map(value => `
+      <div class="table-card ${ONLINE_SUIT_CLASS[suit]}">
+        <div class="table-rank">${ONLINE_RANK_BY_VALUE[value]}</div>
+        <div class="table-suit">${ONLINE_SUIT_SYMBOL[suit]}</div>
+      </div>
+    `).join('')
+
+    return `
+      <div class="suit-line">
+        <div class="suit-label">${ONLINE_SUIT_SYMBOL[suit]}</div>
+        ${cards}
+      </div>
+    `
+  }).join('')
+
+  const handHtml = myHand.map(card => {
+    const playable = myTurn && !winnerId && isLegalOnlineMove(card, game.table || makeEmptyOnlineTable())
+    return `
+      <button
+        type="button"
+        class="card ${ONLINE_SUIT_CLASS[card.suit]} ${playable ? 'highlight' : 'disabled'} online-play-card"
+        data-card-id="${card.id}"
+        ${playable ? '' : 'disabled'}
+        style="border:0; width:100%;"
+      >
+        <div class="card-rank">${card.rank}</div>
+        <div class="card-suit">${card.symbol}</div>
+      </button>
+    `
+  }).join('')
+
+  area.innerHTML = `
+    <div class="panel">
+      <div class="panel-title">PARTIE EN LIGNE</div>
+
+      <div style="text-align:center; margin-bottom:12px; font-weight:700;">
+        ${winnerId ? 'Manche terminée - gagnant : ' + escapeHtml(winnerName) : 'Tour de ' + escapeHtml(currentTurnName)}
+      </div>
+
+      <div class="score-wrap" style="justify-content:center; margin-bottom:14px;">
+        ${playersHtml}
+      </div>
+
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-title">TABLE EN LIGNE</div>
+        <div>${tableHtml}</div>
+      </div>
+
+      <div class="panel" style="margin-bottom:0;">
+        <div class="panel-title">TA MAIN EN LIGNE</div>
+        <div style="text-align:center; margin-bottom:10px;">
+          ${winnerId ? 'La manche est terminée.' : (myTurn ? 'C’est ton tour.' : 'Attends ton tour.')}
+        </div>
+        <div class="hand-grid">
+          ${handHtml || '<div style="text-align:center; width:100%;">Aucune carte.</div>'}
+        </div>
+      </div>
+
+      <div style="text-align:center; margin-top:12px; opacity:.9;">
+        ${escapeHtml(game.lastAction || 'Partie démarrée')}
+      </div>
+    </div>
+  `
+
+  area.querySelectorAll('.online-play-card').forEach(button => {
+    button.addEventListener('click', () => {
+      playOnlineCard(button.dataset.cardId)
+    })
+  })
+}
+
+function renderRoom(roomId, state, extra = '') {
+  if (!state.started || !state.onlineGame) {
+    renderWaitingRoom(roomId, state, extra)
+    return
+  }
+  renderGameState(roomId, state, extra)
+}
+
+async function fetchRoom(roomId) {
+  const { data, error } = await supabase
+    .from('games')
+    .select('*')
+    .eq('room_id', roomId)
+    .single()
+
+  if (error || !data) return null
+  return data
+}
+
+async function loadRoom(roomId, extra = '') {
+  const gameRow = await fetchRoom(roomId)
+
+  if (!gameRow) {
+    renderWaitingRoom(roomId, {
+      roomId,
+      hostId: getPlayerId(),
+      started: false,
+      players: []
+    }, extra)
+    return
+  }
+
+  renderRoom(roomId, gameRow.state || {}, extra)
+  startRoomPolling(roomId)
 }
 
 function startRoomPolling(roomId) {
@@ -1033,35 +1470,14 @@ function startRoomPolling(roomId) {
   roomPollingRoomId = roomId
 
   roomRefreshInterval = setInterval(async () => {
-    const currentRoomId = localStorage.getItem('le7_room_id')
+    const currentRoomId = sessionStorage.getItem('le7_room_id')
     if (!currentRoomId) return
 
-    const { data, error } = await supabase
-      .from('games')
-      .select('*')
-      .eq('room_id', currentRoomId)
-      .single()
+    const gameRow = await fetchRoom(currentRoomId)
+    if (!gameRow) return
 
-    if (error || !data) return
-
-    updateOnlineInfoFromRoom(data, currentRoomId)
-  }, 2000)
-}
-
-async function loadRoom(roomId) {
-  const { data, error } = await supabase
-    .from('games')
-    .select('*')
-    .eq('room_id', roomId)
-    .single()
-
-  if (error || !data) {
-    alert('Impossible de charger le salon')
-    return
-  }
-
-  updateOnlineInfoFromRoom(data, roomId)
-  startRoomPolling(roomId)
+    renderRoom(currentRoomId, gameRow.state || {})
+  }, 1200)
 }
 
 async function createRoom() {
@@ -1073,16 +1489,13 @@ async function createRoom() {
     roomId,
     hostId: playerId,
     started: false,
-    currentPlayer: 0,
-    players: [{ id: playerId, name: playerName, online: true }],
-    table: { spades: [], hearts: [], diamonds: [], clubs: [] },
-    hands: {},
-    deck: [],
-    scores: {},
-    pendingGiveCard: null
+    players: [
+      { id: playerId, name: playerName, online: true }
+    ],
+    onlineGame: null
   }
 
-  const { error: gameError } = await supabase
+  const { error } = await supabase
     .from('games')
     .upsert({
       room_id: roomId,
@@ -1091,28 +1504,15 @@ async function createRoom() {
       state: initialState
     })
 
-  if (gameError) {
-    alert('Erreur création salon : ' + gameError.message)
+  if (error) {
+    alert('Erreur création salon : ' + error.message)
     return
   }
 
-  const { error: playerError } = await supabase
-    .from('players')
-    .upsert({
-      id: playerId,
-      room_id: roomId,
-      name: playerName,
-      connected: true
-    })
-
-  if (playerError) {
-    alert('Erreur ajout joueur : ' + playerError.message)
-    return
-  }
-
-  localStorage.setItem('le7_room_id', roomId)
-  alert('Salon créé : ' + roomId)
-  await loadRoom(roomId)
+  sessionStorage.setItem('le7_room_id', roomId)
+  renderWaitingRoom(roomId, initialState, 'Salon créé')
+  startRoomPolling(roomId)
+  await loadRoom(roomId, 'Salon créé')
 }
 
 async function joinRoom() {
@@ -1126,61 +1526,226 @@ async function joinRoom() {
     return
   }
 
-  const { data: gameRow, error: gameError } = await supabase
-    .from('games')
-    .select('*')
-    .eq('room_id', roomId)
-    .single()
+  const gameRow = await fetchRoom(roomId)
 
-  if (gameError || !gameRow) {
+  if (!gameRow) {
     alert('Salon introuvable')
     return
   }
 
   const state = gameRow.state || {}
-  state.players = state.players || []
 
-  const existingIndex = state.players.findIndex(p => p.id === playerId)
-  if (existingIndex === -1) {
-    state.players.push({ id: playerId, name: playerName, online: true })
-  } else {
-    state.players[existingIndex].name = playerName
-    state.players[existingIndex].online = true
+  if (state.started) {
+    const existingPlayer = normalizePlayers(state.players || []).find(player => player.id === playerId)
+    if (!existingPlayer) {
+      alert('Partie déjà commencée, impossible de rejoindre maintenant')
+      return
+    }
   }
 
-  const { error: playerError } = await supabase
-    .from('players')
-    .upsert({
+  const nextState = {
+    ...state,
+    roomId,
+    hostId: gameRow.host_id || state.hostId || playerId,
+    started: !!state.started,
+    players: upsertPlayerInState(state.players || [], {
       id: playerId,
-      room_id: roomId,
-      name: playerName,
-      connected: true
-    })
-
-  if (playerError) {
-    alert('Erreur ajout joueur : ' + playerError.message)
-    return
+      name: playerName
+    }),
+    onlineGame: state.onlineGame || null
   }
 
-  const { error: updateError } = await supabase
+  const { error } = await supabase
     .from('games')
-    .update({ state })
+    .update({ state: nextState })
     .eq('room_id', roomId)
 
-  if (updateError) {
-    alert('Erreur mise à jour salon : ' + updateError.message)
+  if (error) {
+    alert('Erreur mise à jour salon : ' + error.message)
     return
   }
 
-  localStorage.setItem('le7_room_id', roomId)
-  alert('Salon rejoint : ' + roomId)
+  sessionStorage.setItem('le7_room_id', roomId)
+  renderRoom(roomId, nextState, 'Salon rejoint')
+  startRoomPolling(roomId)
+  await loadRoom(roomId, 'Salon rejoint')
+}
+
+async function startOnlineGame() {
+  const roomId = sessionStorage.getItem('le7_room_id')
+  const playerId = getPlayerId()
+
+  if (!roomId) {
+    alert('Crée ou rejoins un salon d’abord')
+    return
+  }
+
+  const gameRow = await fetchRoom(roomId)
+
+  if (!gameRow) {
+    alert('Impossible de charger le salon')
+    return
+  }
+
+  const state = gameRow.state || {}
+  const roomPlayers = normalizePlayers(state.players || [])
+
+  if ((gameRow.host_id || state.hostId) !== playerId) {
+    alert('Seul le créateur du salon peut lancer la partie')
+    return
+  }
+
+  if (roomPlayers.length < 2) {
+    alert('Il faut au moins 2 joueurs dans le salon')
+    return
+  }
+
+  const deck = createOnlineDeck()
+  const hands = dealOnlineHands(deck, roomPlayers)
+  const table = makeEmptyOnlineTable()
+  const currentPlayerId = autoPlaceSevenDiamond(hands, roomPlayers, table)
+
+  const scores = {}
+  roomPlayers.forEach(player => {
+    scores[player.id] = 0
+  })
+
+  const nextState = {
+    ...state,
+    hostId: gameRow.host_id || state.hostId || playerId,
+    started: true,
+    players: roomPlayers,
+    phase: 'playing',
+    onlineGame: {
+      players: roomPlayers,
+      table,
+      hands,
+      scores,
+      currentPlayerId,
+      winnerId: null,
+      lastAction: 'La manche en ligne a commencé. Le 7♦ a été posé automatiquement.'
+    }
+  }
+
+  const { error } = await supabase
+    .from('games')
+    .update({
+      started: true,
+      state: nextState
+    })
+    .eq('room_id', roomId)
+
+  if (error) {
+    alert('Erreur démarrage : ' + error.message)
+    return
+  }
+
+  renderGameState(roomId, nextState, 'Partie en ligne commencée')
   await loadRoom(roomId)
+}
+
+async function playOnlineCard(cardId) {
+  const roomId = sessionStorage.getItem('le7_room_id')
+  const playerId = getPlayerId()
+
+  if (!roomId) return
+
+  const gameRow = await fetchRoom(roomId)
+
+  if (!gameRow) {
+    alert('Impossible de charger la partie')
+    return
+  }
+
+  const state = gameRow.state || {}
+  const game = state.onlineGame
+
+  if (!state.started || !game) {
+    alert('Aucune partie en ligne active')
+    return
+  }
+
+  if (game.winnerId) {
+    alert('La manche est déjà terminée')
+    return
+  }
+
+  if (game.currentPlayerId !== playerId) {
+    alert("Ce n'est pas ton tour")
+    return
+  }
+
+  const myHand = [...(game.hands?.[playerId] || [])]
+  const cardIndex = myHand.findIndex(card => card.id === cardId)
+  if (cardIndex === -1) return
+
+  const card = myHand[cardIndex]
+  const table = {
+    spades: [...(game.table?.spades || [])],
+    hearts: [...(game.table?.hearts || [])],
+    diamonds: [...(game.table?.diamonds || [])],
+    clubs: [...(game.table?.clubs || [])]
+  }
+
+  if (!isLegalOnlineMove(card, table)) {
+    alert('Carte non jouable')
+    return
+  }
+
+  myHand.splice(cardIndex, 1)
+  sortOnlineHand(myHand)
+  table[card.suit] = [...(table[card.suit] || []), card.value].sort((a, b) => a - b)
+
+  const actorName = getPlayerNameById(game.players || [], playerId)
+
+  let nextPlayerId = game.currentPlayerId
+  let winnerId = null
+  let lastAction = actorName + ' joue ' + card.rank + card.symbol
+
+  if (myHand.length === 0) {
+    winnerId = playerId
+    lastAction = actorName + ' gagne la manche'
+  } else {
+    nextPlayerId = getNextPlayerId(game.players || [], playerId)
+  }
+
+  const nextState = {
+    ...state,
+    onlineGame: {
+      ...game,
+      table,
+      hands: {
+        ...game.hands,
+        [playerId]: myHand
+      },
+      currentPlayerId: nextPlayerId,
+      winnerId,
+      lastAction
+    }
+  }
+
+  const { error } = await supabase
+    .from('games')
+    .update({ state: nextState })
+    .eq('room_id', roomId)
+
+  if (error) {
+    alert('Erreur jeu : ' + error.message)
+    return
+  }
+
+  renderGameState(roomId, nextState)
 }
 
 window.createRoom = createRoom
 window.joinRoom = joinRoom
 
-const savedRoomId = localStorage.getItem('le7_room_id')
+const onlineStartBtn = document.getElementById('onlineStartBtn')
+if (onlineStartBtn) {
+  onlineStartBtn.addEventListener('click', startOnlineGame)
+}
+
+const savedRoomId = sessionStorage.getItem('le7_room_id')
 if (savedRoomId) {
   loadRoom(savedRoomId)
 }
@@ -1188,5 +1753,3 @@ if (savedRoomId) {
 
 </body>
 </html>
-
-
