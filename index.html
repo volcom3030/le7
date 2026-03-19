@@ -881,8 +881,8 @@ function checkWinner(){
 
       const lines = roundScores
         .map((pts, idx) => `${names[idx]} : +${pts} pts (total ${scores[idx]})`)
-        .join('
-');
+        .join("
+");
 
       const maxScore = Math.max(...scores.slice(0, totalPlayers));
       const minScore = Math.min(...scores.slice(0, totalPlayers));
