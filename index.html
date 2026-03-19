@@ -302,11 +302,11 @@ button, input { font: inherit; }
     <button type="button" class="secondary-btn" onclick="joinRoom()">Rejoindre un salon</button>
   </div>
 
-  <button type="button" class="primary-btn" id="startBtn" style="margin-top:18px;">Commencer local</button>
+  <button type="button" class="primary-btn" id="startBtn" style="margin-top:18px;" onclick="showNamesForm()">Commencer local</button>
   <div style="height:10px"></div>
-  <button type="button" class="secondary-btn" id="instructionsBtn">Instructions</button>
+  <button type="button" class="secondary-btn" id="instructionsBtn" onclick="openInstructions()">Instructions</button>
   <div style="height:10px"></div>
-  <button type="button" class="secondary-btn" id="downloadBtn">Télécharger le jeu</button>
+  <button type="button" class="secondary-btn" id="downloadBtn" onclick="downloadGameFile()">Télécharger le jeu</button>
 </div>
 
 <div id="onlineRoomScreen" class="screen hidden">
@@ -439,31 +439,19 @@ function hideAllMainScreens() {
 
 function showScreen(screenId) {
   hideAllMainScreens();
-  const el = $(screenId);
-  if (el) el.classList.remove('hidden');
+  $(screenId).classList.remove('hidden');
 }
 
-function setScreen(screenId, hashValue) {
-  showScreen(screenId);
-  if (hashValue && location.hash !== hashValue) {
-    history.replaceState(null, '', hashValue);
-  }
+function openOnlineRoomScreen() {
+  showScreen('onlineRoomScreen');
 }
 
-function applyRoute() {
-  const hash = location.hash || '#menu';
-  if (hash === '#online-room') return showScreen('onlineRoomScreen');
-  if (hash === '#names') return showScreen('namesForm');
-  if (hash === '#game') return showScreen('game');
+function goToMenuScreen() {
   showScreen('menu');
 }
 
-function openOnlineRoomScreen() { setScreen('onlineRoomScreen', '#online-room'); }
-function goToMenuScreen() { setScreen('menu', '#menu'); }
-
 window.openOnlineRoomScreen = openOnlineRoomScreen;
 window.goToMenuScreen = goToMenuScreen;
-window.addEventListener('hashchange', applyRoute);
 
 function setMode(n){
   selectedMode = n;
@@ -490,7 +478,7 @@ function setBotDifficulty(level){
 }
 
 function showNamesForm(){
-  setScreen('namesForm', '#names');
+  showScreen('namesForm');
   $('name1').placeholder = selectedMode === 1 ? 'Ton nom' : 'Joueur 1';
   $('name2').classList.toggle('hidden', selectedMode === 1);
   $('name3').classList.toggle('hidden', selectedMode < 3);
@@ -498,7 +486,7 @@ function showNamesForm(){
 }
 
 function backToMenuFromNames(){
-  setScreen('menu', '#menu');
+  showScreen('menu');
 }
 
 function startGame(){
@@ -517,7 +505,7 @@ function startGame(){
   }
 
   scores = [0,0,0,0];
-  setScreen('game', '#game');
+  showScreen('game');
   renderScores();
   newRound();
 }
@@ -939,7 +927,7 @@ function mainMenu(){
   closeMenu();
   $('nextOverlay').classList.remove('show');
   $('giveOverlay').classList.remove('show');
-  setScreen('menu', '#menu');
+  showScreen('menu');
 }
 
 function downloadGameFile(){
@@ -976,16 +964,7 @@ window.closeGiveOverlay = closeGiveOverlay;
 window.downloadGameFile = downloadGameFile;
 
 window.addEventListener('load', () => {
-  if (!location.hash) setScreen('menu', '#menu');
-  else applyRoute();
-
-  const s = $('startBtn');
-  const i = $('instructionsBtn');
-  const d = $('downloadBtn');
-
-  if (s) s.addEventListener('click', showNamesForm);
-  if (i) i.addEventListener('click', openInstructions);
-  if (d) d.addEventListener('click', downloadGameFile);
+  showScreen('menu');
 });
 </script>
 
