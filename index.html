@@ -6,6 +6,7 @@
 <title>LE 7 ONLINE</title>
 <style>
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
@@ -13,6 +14,7 @@ body {
   color: #fff;
   min-height: 100vh;
 }
+
 button, input { font: inherit; }
 .hidden { display: none !important; }
 
@@ -251,6 +253,68 @@ input.online-input {
 
 input.online-input::placeholder {
   color: rgba(255,255,255,.8);
+  opacity: 1;
+}
+
+.menu-title {
+  color: #ffffff;
+  text-shadow: 0 6px 18px rgba(0,0,0,.22);
+}
+
+.colorful-suits {
+  display: flex;
+  gap: 22px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 56px;
+  letter-spacing: 0;
+}
+
+.suit-spade { color: #111111; }
+.suit-heart { color: #e53935; }
+.suit-diamond { color: #e53935; }
+.suit-club { color: #111111; }
+
+.menu-input {
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 8px 18px rgba(0,0,0,.18);
+  color: #ffffff;
+}
+
+.menu-input::placeholder {
+  color: rgba(255,255,255,.82);
+  opacity: 1;
+}
+
+.menu-btn {
+  min-width: 190px;
+}
+
+.menu-btn-soft {
+  background: rgba(255,255,255,.14);
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(0,0,0,.18);
+}
+
+.menu-btn-download {
+  background: rgba(255,216,77,.18);
+  color: #fff3b0;
+  box-shadow: 0 10px 22px rgba(0,0,0,.18);
+}
+
+.made-by {
+  position: fixed;
+  left: 0;
+  bottom: 10px;
+  width: 100%;
+  text-align: center;
+  font-size: 13px;
+  color: #ffd84d;
+  letter-spacing: .4px;
+  pointer-events: none;
+  z-index: 5;
 }
 
 @media (max-width: 560px) {
@@ -265,26 +329,29 @@ input.online-input::placeholder {
 <body>
 
 <div id="menu" class="screen">
-  <div class="suits">♠ ♥ ♦ ♣</div>
-  <div class="title">LE 7 ONLINE</div>
+  <div class="suits colorful-suits">
+    <span class="suit-diamond">♦</span>
+    <span class="suit-spade">♠</span>
+    <span class="suit-heart">♥</span>
+    <span class="suit-club">♣</span>
+  </div>
+
+  <div class="title menu-title">LE 7 ONLINE</div>
 
   <div style="margin-top:18px;">
-    <input id="onlineName" class="online-input" placeholder="Ton nom">
+    <input id="onlineName" class="online-input menu-input" placeholder="Ton nom">
   </div>
 
   <div style="margin-top:12px;">
-    <input id="roomCode" class="online-input" placeholder="Code salon" style="text-transform:uppercase;">
+    <input id="roomCode" class="online-input menu-input" placeholder="Code salon" style="text-transform:uppercase;">
   </div>
 
-  <div style="margin-top:14px; display:flex; flex-direction:column; align-items:center; gap:10px;">
-    <button type="button" class="secondary-btn" onclick="createRoom()">Créer un salon</button>
-    <button type="button" class="secondary-btn" onclick="joinRoom()">Rejoindre un salon</button>
+  <div style="margin-top:16px; display:flex; flex-direction:column; align-items:center; gap:12px;">
+    <button type="button" class="primary-btn menu-btn" onclick="createRoom()">Créer un salon</button>
+    <button type="button" class="secondary-btn menu-btn menu-btn-soft" onclick="joinRoom()">Rejoindre un salon</button>
+    <button type="button" class="secondary-btn menu-btn menu-btn-soft" onclick="openInstructions()">Instructions</button>
+    <button type="button" class="secondary-btn menu-btn menu-btn-download" id="downloadBtn">Télécharger le jeu</button>
   </div>
-
-  <div style="height:12px"></div>
-  <button type="button" class="secondary-btn" id="instructionsBtn">Instructions</button>
-  <div style="height:10px"></div>
-  <button type="button" class="secondary-btn" id="downloadBtn">Télécharger le jeu</button>
 </div>
 
 <div id="onlineRoomScreen" class="screen hidden">
@@ -331,6 +398,8 @@ input.online-input::placeholder {
   </div>
 </div>
 
+<div class="made-by">made by King.D</div>
+
 <script>
 function $(id){ return document.getElementById(id); }
 
@@ -371,20 +440,20 @@ function goToMenuScreen() {
   setScreen('menu', '#menu');
 }
 
-function openInstructions() {
+window.openInstructions = function () {
   const overlay = $('instructionsOverlay');
   if (overlay) overlay.classList.add('show');
-}
+};
 
-function closeInstructions() {
+window.closeInstructions = function () {
   const overlay = $('instructionsOverlay');
   if (overlay) overlay.classList.remove('show');
-}
+};
 
-function closeVictoryOverlay() {
+window.closeVictoryOverlay = function () {
   const overlay = $('victoryOverlay');
   if (overlay) overlay.classList.remove('show');
-}
+};
 
 function downloadGameFile() {
   try {
@@ -404,16 +473,11 @@ function downloadGameFile() {
 
 window.openOnlineRoomScreen = openOnlineRoomScreen;
 window.goToMenuScreen = goToMenuScreen;
-window.closeInstructions = closeInstructions;
-window.closeVictoryOverlay = closeVictoryOverlay;
 
 window.addEventListener('hashchange', applyRoute);
 
 window.addEventListener('load', () => {
-  const instructionsBtn = $('instructionsBtn');
   const downloadBtn = $('downloadBtn');
-
-  if (instructionsBtn) instructionsBtn.addEventListener('click', openInstructions);
   if (downloadBtn) downloadBtn.addEventListener('click', downloadGameFile);
 
   if (!location.hash) setScreen('menu', '#menu');
@@ -426,7 +490,6 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const SUPABASE_URL = 'https://pzrhgekqxaacmawqhxxf.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_fDFHYtswH0r0XnPCyVjZoA_r3wh5hj6'
-
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
 const ONLINE_SUITS = ['spades', 'hearts', 'diamonds', 'clubs']
@@ -587,10 +650,12 @@ function dealOnlineHands(deck, roomPlayers) {
   roomPlayers.forEach(player => {
     hands[player.id] = []
   })
+
   deck.forEach((card, index) => {
     const player = roomPlayers[index % roomPlayers.length]
     hands[player.id].push(card)
   })
+
   Object.values(hands).forEach(sortOnlineHand)
   return hands
 }
