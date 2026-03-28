@@ -1,3 +1,13 @@
+
+
+
+
+
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -267,25 +277,25 @@ button, input { font: inherit; }
   <div>Nombre de joueurs</div>
 
   <div class="player-buttons">
-    <button type="button" class="player-btn" id="btn1" onclick="setMode(1)">1</button>
-    <button type="button" class="player-btn active" id="btn2" onclick="setMode(2)">2</button>
-    <button type="button" class="player-btn" id="btn3" onclick="setMode(3)">3</button>
-    <button type="button" class="player-btn" id="btn4" onclick="setMode(4)">4</button>
+    <button class="player-btn" id="btn1" onclick="setMode(1)">1</button>
+    <button class="player-btn active" id="btn2" onclick="setMode(2)">2</button>
+    <button class="player-btn" id="btn3" onclick="setMode(3)">3</button>
+    <button class="player-btn" id="btn4" onclick="setMode(4)">4</button>
   </div>
 
   <div id="botCountWrap" class="hidden" style="text-align:center; margin-bottom:18px;">
     <div style="margin-bottom:10px;">Nombre d'ordinateurs</div>
     <div class="player-buttons" style="margin:0 0 16px;">
-      <button type="button" class="player-btn active" id="bot1" onclick="setBotCount(1)">1</button>
-      <button type="button" class="player-btn" id="bot2" onclick="setBotCount(2)">2</button>
-      <button type="button" class="player-btn" id="bot3" onclick="setBotCount(3)">3</button>
+      <button class="player-btn active" id="bot1" onclick="setBotCount(1)">1</button>
+      <button class="player-btn" id="bot2" onclick="setBotCount(2)">2</button>
+      <button class="player-btn" id="bot3" onclick="setBotCount(3)">3</button>
     </div>
 
     <div style="margin-bottom:10px;">Difficulté des ordinateurs</div>
     <div class="player-buttons" style="margin:0;">
-      <button type="button" class="secondary-btn" id="diffEasy" onclick="setBotDifficulty('easy')">Facile</button>
-      <button type="button" class="primary-btn" id="diffNormal" onclick="setBotDifficulty('normal')">Normal</button>
-      <button type="button" class="secondary-btn" id="diffHard" onclick="setBotDifficulty('hard')">Agressif</button>
+      <button class="secondary-btn" id="diffEasy" onclick="setBotDifficulty('easy')">Facile</button>
+      <button class="primary-btn" id="diffNormal" onclick="setBotDifficulty('normal')">Normal</button>
+      <button class="secondary-btn" id="diffHard" onclick="setBotDifficulty('hard')">Agressif</button>
     </div>
   </div>
 
@@ -294,19 +304,19 @@ button, input { font: inherit; }
   </div>
 
   <div style="margin-top:10px;">
-    <input id="roomCode" placeholder="CODE SALON" style="padding:10px; border-radius:8px; width:220px; text-transform:uppercase;">
+    <input id="roomCode" placeholder="Code salon" style="padding:10px; border-radius:8px; width:220px; text-transform:uppercase;">
   </div>
 
-  <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+  <div style="margin-top:10px;">
     <button type="button" class="secondary-btn" onclick="createRoom()">Créer un salon</button>
     <button type="button" class="secondary-btn" onclick="joinRoom()">Rejoindre un salon</button>
   </div>
 
-  <button type="button" class="primary-btn" id="startBtn" style="margin-top:18px;" onclick="showNamesForm()">Commencer local</button>
+  <button type="button" class="primary-btn" id="startBtn" style="margin-top:18px;">Commencer local</button>
   <div style="height:10px"></div>
-  <button type="button" class="secondary-btn" id="instructionsBtn" onclick="openInstructions()">Instructions</button>
+  <button type="button" class="secondary-btn" id="instructionsBtn">Instructions</button>
   <div style="height:10px"></div>
-  <button type="button" class="secondary-btn" id="downloadBtn" onclick="downloadGameFile()">Télécharger le jeu</button>
+  <button type="button" class="secondary-btn" id="downloadBtn">Télécharger le jeu</button>
 </div>
 
 <div id="onlineRoomScreen" class="screen hidden">
@@ -315,8 +325,7 @@ button, input { font: inherit; }
 
   <div class="actions">
     <button type="button" class="primary-btn" id="onlineStartBtn">Commencer en ligne</button>
-    <button type="button" class="secondary-btn" onclick="leaveRoom()">Quitter le salon</button>
-    <button type="button" class="secondary-btn" onclick="returnToMenuFromOnline()">Retour au menu</button>
+    <button type="button" class="secondary-btn" onclick="goToMenuScreen()">Retour au menu</button>
   </div>
 
   <div id="onlineGameArea" style="width:min(980px,100%); margin-top:14px;"></div>
@@ -328,14 +337,14 @@ button, input { font: inherit; }
   <input id="name2" placeholder="Joueur 2">
   <input id="name3" placeholder="Joueur 3" class="hidden">
   <input id="name4" placeholder="Joueur 4" class="hidden">
-  <button type="button" class="primary-btn" onclick="startGame()">Démarrer</button>
-  <button type="button" class="secondary-btn" onclick="backToMenuFromNames()">Retour</button>
+  <button class="primary-btn" onclick="startGame()">Démarrer</button>
+  <button class="secondary-btn" onclick="backToMenuFromNames()">Retour</button>
 </div>
 
 <div id="game" class="screen hidden">
   <div class="topbar">
     <div class="score-wrap" id="scores"></div>
-    <button type="button" class="secondary-btn" onclick="openMenu()">Menu</button>
+    <button class="secondary-btn" onclick="openMenu()">Menu</button>
   </div>
 
   <div class="turn-msg" id="turnMsg">Tour</div>
@@ -351,7 +360,7 @@ button, input { font: inherit; }
   </div>
 
   <div class="actions">
-    <button type="button" id="askBtn" class="primary-btn hidden" onclick="askCard()">Demander une carte</button>
+    <button id="askBtn" class="primary-btn hidden" onclick="askCard()">Demander une carte</button>
   </div>
 </div>
 
@@ -359,7 +368,7 @@ button, input { font: inherit; }
   <div class="overlay-card">
     <div class="overlay-title" id="nextTitle">Tour de ...</div>
     <div class="overlay-sub" id="nextSub">Passe l'appareil au bon joueur.</div>
-    <button type="button" class="primary-btn" onclick="continueFromNext()">Continuer</button>
+    <button class="primary-btn" onclick="continueFromNext()">Continuer</button>
   </div>
 </div>
 
@@ -369,7 +378,7 @@ button, input { font: inherit; }
     <div class="overlay-sub" id="giveSub">Le joueur précédent choisit la carte à donner.</div>
     <div id="giveArea" class="give-grid"></div>
     <div class="note">Touchez une carte pour la donner.</div>
-    <button type="button" class="close-btn" onclick="closeGiveOverlay()">Annuler</button>
+    <button class="close-btn" onclick="closeGiveOverlay()">Annuler</button>
   </div>
 </div>
 
@@ -391,7 +400,7 @@ button, input { font: inherit; }
       <p><strong>Mode 1 joueur :</strong> vous pouvez choisir d'affronter 1 à 3 ordinateurs, avec une difficulté facile, normale ou agressive.</p>
       <p><strong>Mode 2 joueurs et plus :</strong> un écran “Continuer” cache la main entre les tours.</p>
     </div>
-    <button type="button" class="close-btn" onclick="closeInstructions()">Fermer</button>
+    <button class="close-btn" onclick="closeInstructions()">Fermer</button>
   </div>
 </div>
 
@@ -399,9 +408,9 @@ button, input { font: inherit; }
   <div class="overlay-card">
     <div class="overlay-title">Menu</div>
     <div class="menu-list">
-      <button type="button" class="primary-btn" onclick="newRound()">Nouvelle manche</button>
-      <button type="button" class="secondary-btn" onclick="mainMenu()">Menu principal</button>
-      <button type="button" class="close-btn" onclick="closeMenu()">Fermer</button>
+      <button class="primary-btn" onclick="newRound()">Nouvelle manche</button>
+      <button class="secondary-btn" onclick="mainMenu()">Menu principal</button>
+      <button class="close-btn" onclick="closeMenu()">Fermer</button>
     </div>
   </div>
 </div>
@@ -442,22 +451,48 @@ function showScreen(screenId) {
   $(screenId).classList.remove('hidden');
 }
 
+function setScreen(screenId, hashValue) {
+  showScreen(screenId);
+  if (hashValue && location.hash !== hashValue) {
+    history.replaceState(null, '', hashValue);
+  }
+}
+
+function applyRoute() {
+  const hash = location.hash || '#menu';
+
+  if (hash === '#online-room') {
+    showScreen('onlineRoomScreen');
+    return;
+  }
+  if (hash === '#names') {
+    showScreen('namesForm');
+    return;
+  }
+  if (hash === '#game') {
+    showScreen('game');
+    return;
+  }
+  showScreen('menu');
+}
+
 function openOnlineRoomScreen() {
-  showScreen('onlineRoomScreen');
+  setScreen('onlineRoomScreen', '#online-room');
 }
 
 function goToMenuScreen() {
-  showScreen('menu');
+  setScreen('menu', '#menu');
 }
 
 window.openOnlineRoomScreen = openOnlineRoomScreen;
 window.goToMenuScreen = goToMenuScreen;
 
+window.addEventListener('hashchange', applyRoute);
+
 function setMode(n){
   selectedMode = n;
   ['btn1','btn2','btn3','btn4'].forEach((id, idx) => {
-    const el = $(id);
-    if (el) el.classList.toggle('active', idx + 1 === n);
+    $(id).classList.toggle('active', idx + 1 === n);
   });
   $('botCountWrap').classList.toggle('hidden', n !== 1);
 }
@@ -465,8 +500,7 @@ function setMode(n){
 function setBotCount(n){
   selectedBotCount = n;
   ['bot1','bot2','bot3'].forEach((id, idx) => {
-    const el = $(id);
-    if (el) el.classList.toggle('active', idx + 1 === n);
+    $(id).classList.toggle('active', idx + 1 === n);
   });
 }
 
@@ -478,15 +512,15 @@ function setBotDifficulty(level){
 }
 
 function showNamesForm(){
-  showScreen('namesForm');
-  $('name1').placeholder = selectedMode === 1 ? 'Ton nom' : 'Joueur 1';
-  $('name2').classList.toggle('hidden', selectedMode === 1);
+  setScreen('namesForm', '#names');
+  $('name2').classList.toggle('hidden', selectedMode < 2 || selectedMode === 1);
   $('name3').classList.toggle('hidden', selectedMode < 3);
   $('name4').classList.toggle('hidden', selectedMode < 4);
+  if (selectedMode === 1) $('name2').classList.add('hidden');
 }
 
 function backToMenuFromNames(){
-  showScreen('menu');
+  setScreen('menu', '#menu');
 }
 
 function startGame(){
@@ -503,9 +537,8 @@ function startGame(){
       ($('name4').value || 'Joueur 4').trim()
     ].slice(0, totalPlayers);
   }
-
   scores = [0,0,0,0];
-  showScreen('game');
+  setScreen('game', '#game');
   renderScores();
   newRound();
 }
@@ -538,7 +571,9 @@ function createDeck(){
 
 function dealCards(){
   players = Array.from({length: totalPlayers}, () => []);
-  deck.forEach((card, index) => { players[index % totalPlayers].push(card); });
+  deck.forEach((card, index) => {
+    players[index % totalPlayers].push(card);
+  });
   players.forEach(sortHand);
 }
 
@@ -559,8 +594,13 @@ function autoPlaySevenDiamond(){
   }
 }
 
-function totalPlayedCount(){ return table.reduce((sum, line) => sum + line.length, 0); }
-function diamondRankUnlocked(value){ return table[DIAMOND].includes(value); }
+function totalPlayedCount(){
+  return table.reduce((sum, line) => sum + line.length, 0);
+}
+
+function diamondRankUnlocked(value){
+  return table[DIAMOND].includes(value);
+}
 
 function isLegalMove(card){
   if (!card) return false;
@@ -584,9 +624,17 @@ function isLegalMove(card){
   return !line.includes(card.value) && (card.value === min - 1 || card.value === max + 1);
 }
 
-function hasLegalMove(playerIndex){ return players[playerIndex].some(isLegalMove); }
-function isBot(playerIndex){ return selectedMode === 1 && playerIndex >= 1; }
-function isHumanMulti(){ return selectedMode >= 2; }
+function hasLegalMove(playerIndex){
+  return players[playerIndex].some(isLegalMove);
+}
+
+function isBot(playerIndex){
+  return selectedMode === 1 && playerIndex >= 1;
+}
+
+function isHumanMulti(){
+  return selectedMode >= 2;
+}
 
 function renderScores(){
   const wrap = $('scores');
@@ -722,7 +770,7 @@ function advanceTurn(){
 
 function chooseBotCard(legalCards){
   if (botDifficulty === 'easy') return legalCards[Math.floor(Math.random() * legalCards.length)];
-  if (botDifficulty === 'hard') return [...legalCards].sort((a, b) => cardPoints(b) - cardPoints(a))[0];
+  if (botDifficulty === 'hard') return legalCards.sort((a, b) => cardPoints(b) - cardPoints(a))[0];
   const sorted = [...legalCards].sort((a, b) => cardPoints(b) - cardPoints(a));
   return sorted[0] || legalCards[Math.floor(Math.random() * legalCards.length)];
 }
@@ -794,11 +842,6 @@ function askCard(){
 
   requesterIndex = currentPlayer;
   giverIndex = (currentPlayer - 1 + totalPlayers) % totalPlayers;
-
-  if (players[giverIndex].length === 0) {
-    alert(`${names[giverIndex]} n'a plus de carte à donner.`);
-    return;
-  }
 
   if (isBot(giverIndex)) {
     botGiveCardToRequester();
@@ -872,24 +915,13 @@ function checkWinner(){
   for (let i = 0; i < totalPlayers; i++) {
     if (players[i].length === 0) {
       const roundScores = players.map(handPoints);
-
-      for (let j = 0; j < totalPlayers; j++) {
-        scores[j] += roundScores[j];
-      }
-
+      for (let j = 0; j < totalPlayers; j++) scores[j] += roundScores[j];
       renderScores();
-
-      const lines = roundScores
-        .map((pts, idx) => `${names[idx]} : +${pts} pts (total ${scores[idx]})`)
-        .join("
-");
-
+      const lines = roundScores.map((pts, idx) => `${names[idx]} : +${pts} pts (total ${scores[idx]})`).join('
+');
       const maxScore = Math.max(...scores.slice(0, totalPlayers));
       const minScore = Math.min(...scores.slice(0, totalPlayers));
-      const leaders = names
-        .filter((_, idx) => idx < totalPlayers && scores[idx] === minScore)
-        .join(', ');
-
+      const leaders = names.filter((_, idx) => idx < totalPlayers && scores[idx] === minScore).join(', ');
       setTimeout(() => {
         if (maxScore >= 500) {
           alert(`${names[i]} vide sa main !
@@ -899,7 +931,6 @@ ${lines}
 
 Fin de partie !
 Gagnant : ${leaders} avec ${minScore} pts`);
-          mainMenu();
         } else {
           alert(`${names[i]} vide sa main !
 
@@ -908,10 +939,8 @@ ${lines}
 
 En tête : ${leaders} avec ${minScore} pts
 La partie continue jusqu'à 500 points.`);
-          newRound();
         }
       }, 10);
-
       return true;
     }
   }
@@ -922,14 +951,10 @@ function openInstructions(){ $('instructionsOverlay').classList.add('show'); }
 function closeInstructions(){ $('instructionsOverlay').classList.remove('show'); }
 function openMenu(){ $('menuOverlay').classList.add('show'); }
 function closeMenu(){ $('menuOverlay').classList.remove('show'); }
-
 function mainMenu(){
   closeMenu();
-  $('nextOverlay').classList.remove('show');
-  $('giveOverlay').classList.remove('show');
-  showScreen('menu');
+  setScreen('menu', '#menu');
 }
-
 function downloadGameFile(){
   try {
     const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
@@ -946,25 +971,17 @@ function downloadGameFile(){
   }
 }
 
-window.setMode = setMode;
-window.setBotCount = setBotCount;
-window.setBotDifficulty = setBotDifficulty;
-window.showNamesForm = showNamesForm;
-window.backToMenuFromNames = backToMenuFromNames;
-window.startGame = startGame;
-window.openInstructions = openInstructions;
-window.closeInstructions = closeInstructions;
-window.openMenu = openMenu;
-window.closeMenu = closeMenu;
-window.newRound = newRound;
-window.mainMenu = mainMenu;
-window.askCard = askCard;
-window.continueFromNext = continueFromNext;
-window.closeGiveOverlay = closeGiveOverlay;
-window.downloadGameFile = downloadGameFile;
-
 window.addEventListener('load', () => {
-  showScreen('menu');
+  const s = $('startBtn');
+  const i = $('instructionsBtn');
+  const d = $('downloadBtn');
+
+  if (s) s.addEventListener('click', showNamesForm);
+  if (i) i.addEventListener('click', openInstructions);
+  if (d) d.addEventListener('click', downloadGameFile);
+
+  if (!location.hash) setScreen('menu', '#menu');
+  else applyRoute();
 });
 </script>
 
@@ -973,7 +990,34 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const SUPABASE_URL = 'https://pzrhgekqxaacmawqhxxf.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_fDFHYtswH0r0XnPCyVjZoA_r3wh5hj6'
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+const ONLINE_SUITS = ['spades', 'hearts', 'diamonds', 'clubs']
+const ONLINE_SUIT_SYMBOL = {
+  spades: '♠',
+  hearts: '♥',
+  diamonds: '♦',
+  clubs: '♣'
+}
+const ONLINE_SUIT_CLASS = {
+  spades: 'black',
+  hearts: 'red',
+  diamonds: 'red',
+  clubs: 'black'
+}
+const ONLINE_RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'V', 'D', 'R']
+const ONLINE_VALUE_BY_RANK = {
+  A: 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,
+  '8': 8, '9': 9, '10': 10, V: 11, D: 12, R: 13
+}
+const ONLINE_RANK_BY_VALUE = {
+  1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7',
+  8: '8', 9: '9', 10: '10', 11: 'V', 12: 'D', 13: 'R'
+}
+
+let roomRefreshInterval = null
+let roomPollingRoomId = null
 
 function getPlayerId() {
   let id = sessionStorage.getItem('le7_player_id')
@@ -990,175 +1034,340 @@ function getPlayerName() {
   return value || 'Joueur'
 }
 
+function escapeHtml(value = '') {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+}
+
+function openOnlineRoomScreenSafe() {
+  if (window.openOnlineRoomScreen) {
+    window.openOnlineRoomScreen()
+    return
+  }
+
+  const menu = document.getElementById('menu')
+  const namesForm = document.getElementById('namesForm')
+  const game = document.getElementById('game')
+  const onlineRoomScreen = document.getElementById('onlineRoomScreen')
+
+  if (menu) menu.classList.add('hidden')
+  if (namesForm) namesForm.classList.add('hidden')
+  if (game) game.classList.add('hidden')
+  if (onlineRoomScreen) onlineRoomScreen.classList.remove('hidden')
+}
+
 function makeRoomCode(length = 6) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   let code = ''
-  for (let i = 0; i < length; i++) code += chars[Math.floor(Math.random() * chars.length)]
+  for (let i = 0; i < length; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)]
+  }
   return code
 }
 
-async function fetchRoom(roomId) {
-  const { data, error } = await supabase
-    .from('games')
-    .select('*')
-    .eq('room_id', roomId)
-    .single()
+function normalizePlayers(players = []) {
+  const seen = new Map()
 
-  if (error || !data) return null
-  return data
+  players.forEach(player => {
+    if (!player || !player.id) return
+    seen.set(player.id, {
+      id: player.id,
+      name: (player.name || 'Joueur').trim() || 'Joueur',
+      online: player.online !== false
+    })
+  })
+
+  return [...seen.values()]
 }
 
-function renderOnlineRoom(state, playerName) {
-  const roomId = state?.roomId || sessionStorage.getItem('le7_room_id') || ''
-  const players = Array.isArray(state?.players) ? state.players : []
+function upsertPlayerInState(players, player) {
+  const list = normalizePlayers(players)
+  const index = list.findIndex(p => p.id === player.id)
 
-  const info = document.getElementById('onlineInfo')
-  if (info) {
-    const names = players.map(p => p.name).join(', ') || playerName || 'Joueur'
-    info.textContent = 'Salon : ' + roomId + ' | Joueurs : ' + names
+  if (index === -1) {
+    list.push({
+      id: player.id,
+      name: player.name || 'Joueur',
+      online: true
+    })
+  } else {
+    list[index] = {
+      ...list[index],
+      name: player.name || list[index].name || 'Joueur',
+      online: true
+    }
   }
 
+  return normalizePlayers(list)
+}
+
+function makeEmptyOnlineTable() {
+  return {
+    spades: [],
+    hearts: [],
+    diamonds: [],
+    clubs: []
+  }
+}
+
+function suitIndex(suit) {
+  return ONLINE_SUITS.indexOf(suit)
+}
+
+function sortOnlineHand(hand) {
+  hand.sort((a, b) => {
+    const suitDiff = suitIndex(a.suit) - suitIndex(b.suit)
+    if (suitDiff !== 0) return suitDiff
+    return a.value - b.value
+  })
+}
+
+function createOnlineDeck() {
+  const deck = []
+  let id = 1
+
+  for (const suit of ONLINE_SUITS) {
+    for (const rank of ONLINE_RANKS) {
+      deck.push({
+        id: 'c' + id++,
+        suit,
+        symbol: ONLINE_SUIT_SYMBOL[suit],
+        rank,
+        value: ONLINE_VALUE_BY_RANK[rank]
+      })
+    }
+  }
+
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[deck[i], deck[j]] = [deck[j], deck[i]]
+  }
+
+  return deck
+}
+
+function dealOnlineHands(deck, roomPlayers) {
+  const hands = {}
+  roomPlayers.forEach(player => {
+    hands[player.id] = []
+  })
+  deck.forEach((card, index) => {
+    const player = roomPlayers[index % roomPlayers.length]
+    hands[player.id].push(card)
+  })
+  Object.values(hands).forEach(sortOnlineHand)
+  return hands
+}
+
+function totalPlayedCountOnline(table) {
+  return ONLINE_SUITS.reduce((sum, suit) => sum + ((table[suit] || []).length), 0)
+}
+
+function diamondRankUnlocked(table, value) {
+  return (table.diamonds || []).includes(value)
+}
+
+function isLegalOnlineMove(card, table) {
+  if (!card) return false
+
+  if (card.suit === 'diamonds') {
+    if (totalPlayedCountOnline(table) === 0) return card.value === 7
+    const line = table.diamonds || []
+    if (line.length === 0) return false
+    const min = Math.min(...line)
+    const max = Math.max(...line)
+    return !line.includes(card.value) && (card.value === min - 1 || card.value === max + 1)
+  }
+
+  if (!diamondRankUnlocked(table, card.value)) return false
+
+  const line = table[card.suit] || []
+  if (line.length === 0) return card.value === 7
+
+  const min = Math.min(...line)
+  const max = Math.max(...line)
+  return !line.includes(card.value) && (card.value === min - 1 || card.value === max + 1)
+}
+
+function hasPlayableOnlineCard(hand, table) {
+  return (hand || []).some(card => isLegalOnlineMove(card, table))
+}
+
+function autoPlaceSevenDiamond(hands, roomPlayers, table) {
+  let nextPlayerId = roomPlayers[0]?.id || null
+
+  for (let i = 0; i < roomPlayers.length; i++) {
+    const playerId = roomPlayers[i].id
+    const hand = hands[playerId] || []
+    const idx = hand.findIndex(card => card.suit === 'diamonds' && card.value === 7)
+
+    if (idx !== -1) {
+      hand.splice(idx, 1)
+      sortOnlineHand(hand)
+      table.diamonds = [7]
+      nextPlayerId = roomPlayers[(i + 1) % roomPlayers.length].id
+      break
+    }
+  }
+
+  return nextPlayerId
+}
+
+function getNextPlayerId(playerList, currentPlayerId) {
+  const index = playerList.findIndex(player => player.id === currentPlayerId)
+  if (index === -1) return playerList[0]?.id || null
+  return playerList[(index + 1) % playerList.length]?.id || null
+}
+
+function getPreviousPlayerId(playerList, currentPlayerId) {
+  const index = playerList.findIndex(player => player.id === currentPlayerId)
+  if (index === -1) return playerList[playerList.length - 1]?.id || null
+  return playerList[(index - 1 + playerList.length) % playerList.length]?.id || null
+}
+
+function getPlayerNameById(playerList, playerId) {
+  return playerList.find(player => player.id === playerId)?.name || 'Joueur'
+}
+
+function onlineCardPoints(card) {
+  if (card.value === 1) return 20
+  if (card.value >= 2 && card.value <= 9) return 5
+  return 10
+}
+
+function onlineHandPoints(hand = []) {
+  return hand.reduce((sum, card) => sum + onlineCardPoints(card), 0)
+}
+
+function computeOnlineRoundScores(playerList, hands) {
+  const roundScores = {}
+  playerList.forEach(player => {
+    roundScores[player.id] = onlineHandPoints(hands[player.id] || [])
+  })
+  return roundScores
+}
+
+function addOnlineScores(previousScores = {}, roundScores = {}, playerList = []) {
+  const nextScores = { ...previousScores }
+  playerList.forEach(player => {
+    nextScores[player.id] = (nextScores[player.id] || 0) + (roundScores[player.id] || 0)
+  })
+  return nextScores
+}
+
+function getOnlineLeaders(scores = {}, playerList = []) {
+  let minScore = Infinity
+  let leaders = []
+
+  playerList.forEach(player => {
+    const score = scores[player.id] || 0
+    if (score < minScore) {
+      minScore = score
+      leaders = [player.id]
+    } else if (score === minScore) {
+      leaders.push(player.id)
+    }
+  })
+
+  return { leaders, minScore }
+}
+
+function hasReachedOnlineGameEnd(scores = {}, playerList = []) {
+  return playerList.some(player => (scores[player.id] || 0) >= 500)
+}
+
+function setOnlineInfo(roomId, state, extra = '') {
+  const info = document.getElementById('onlineInfo')
+  const roomCodeInput = document.getElementById('roomCode')
+  const roomPlayers = normalizePlayers(state.players || [])
+  const names = roomPlayers.map(player => player.name).join(', ')
+  const currentTurnName = state?.onlineGame?.currentPlayerId
+    ? getPlayerNameById(state.onlineGame.players || [], state.onlineGame.currentPlayerId)
+    : ''
+
+  if (roomCodeInput) roomCodeInput.value = roomId
+  if (!info) return
+
+  let text = 'Salon : ' + roomId + ' | Joueurs : ' + (names || 'aucun')
+  text += state.started ? ' | Statut : partie lancée' : ' | Statut : en attente'
+
+  if (currentTurnName) text += ' | Tour : ' + currentTurnName
+
+  if (state?.onlineGame?.pendingGive) {
+    const giverName = getPlayerNameById(state.onlineGame.players || [], state.onlineGame.pendingGive.giverId)
+    const requesterName = getPlayerNameById(state.onlineGame.players || [], state.onlineGame.pendingGive.requesterId)
+    text += ' | Don : ' + giverName + ' -> ' + requesterName
+  }
+
+  if (state?.onlineGame?.winnerId) {
+    text += ' | Gagnant manche : ' + getPlayerNameById(state.onlineGame.players || [], state.onlineGame.winnerId)
+  }
+
+  if (state?.onlineGame?.finalWinnerIds?.length) {
+    const finalNames = state.onlineGame.finalWinnerIds.map(id => getPlayerNameById(state.onlineGame.players || [], id)).join(', ')
+    text += ' | Fin : ' + finalNames
+  }
+
+  if (extra) text += ' | ' + extra
+  info.textContent = text
+}
+
+function renderWaitingRoom(roomId, state, extra = '') {
+  openOnlineRoomScreenSafe()
+
   const area = document.getElementById('onlineGameArea')
+  const startBtn = document.getElementById('onlineStartBtn')
+  const playerId = getPlayerId()
+  const hostId = state.hostId || null
+  const roomPlayers = normalizePlayers(state.players || [])
+  const isHost = hostId === playerId
+
+  setOnlineInfo(roomId, state, extra)
+
+  const playersHtml = roomPlayers.map(player => {
+    const isMe = player.id === playerId
+    const isHostPlayer = player.id === hostId
+    return `
+      <div class="score">
+        ${escapeHtml(player.name)}${isMe ? ' (toi)' : ''}${isHostPlayer ? ' (hôte)' : ''}
+      </div>
+    `
+  }).join('')
+
   if (area) {
     area.innerHTML = `
       <div class="panel">
         <div class="panel-title">SALON</div>
-        <div class="room-players">
-          ${players.map(p => `<div class="score">${p.name}</div>`).join('')}
+        <div style="text-align:center; margin-bottom:14px;">
+          ${roomPlayers.length < 2 ? 'En attente d’au moins 2 joueurs.' : 'Le salon est prêt.'}
+        </div>
+        <div class="room-players" style="margin-bottom:14px;">
+          ${playersHtml || '<div class="score">Aucun joueur.</div>'}
+        </div>
+        <div style="text-align:center; opacity:.9;">
+          ${isHost ? 'Tu es l’hôte du salon.' : 'Seul l’hôte peut lancer la partie.'}
         </div>
       </div>
     `
   }
+
+  if (startBtn) {
+    if (isHost) {
+      startBtn.classList.remove('hidden')
+      startBtn.disabled = roomPlayers.length < 2
+      startBtn.style.opacity = roomPlayers.length < 2 ? '.6' : '1'
+      startBtn.style.cursor = roomPlayers.length < 2 ? 'not-allowed' : 'pointer'
+    } else {
+      startBtn.classList.add('hidden')
+    }
+  }
 }
 
-async function loadRoom(roomId) {
-  const gameRow = await fetchRoom(roomId)
-  if (!gameRow) {
-    alert('Salon introuvable')
-    return
-  }
+function renderGameState(roomId, state, extra = '') {
+  openOnlineRoomScreenSafe()
 
-  sessionStorage.setItem('le7_room_id', roomId)
-  sessionStorage.removeItem('le7_room_paused')
-
-  const state = gameRow.state || {}
-  const playerName = getPlayerName()
-  renderOnlineRoom(state, playerName)
-
-  if (window.openOnlineRoomScreen) window.openOnlineRoomScreen()
-}
-
-async function createRoom() {
-  const playerId = getPlayerId()
-  const playerName = getPlayerName()
-  const roomId = makeRoomCode()
-
-  const initialState = {
-    roomId,
-    hostId: playerId,
-    started: false,
-    players: [{ id: playerId, name: playerName, online: true }],
-    onlineGame: null
-  }
-
-  const { data, error } = await supabase
-    .from('games')
-    .insert({
-      room_id: roomId,
-      host_id: playerId,
-      started: false,
-      state: initialState
-    })
-    .select()
-
-  if (error) {
-    alert('Erreur création salon : ' + error.message)
-    return
-  }
-
-  if (!data || !data.length) {
-    alert('Aucune salle créée')
-    return
-  }
-
-  const roomInput = document.getElementById('roomCode')
-  if (roomInput) roomInput.value = roomId
-
-  await loadRoom(roomId)
-}
-
-async function joinRoom() {
-  const playerId = getPlayerId()
-  const playerName = getPlayerName()
-  const roomInput = document.getElementById('roomCode')
-  const roomId = roomInput ? roomInput.value.trim().toUpperCase() : ''
-
-  if (!roomId) {
-    alert('Entre un code de salon')
-    return
-  }
-
-  const gameRow = await fetchRoom(roomId)
-  if (!gameRow) {
-    alert('Salon introuvable')
-    return
-  }
-
-  const state = gameRow.state || {}
-  const players = Array.isArray(state.players) ? state.players : []
-  const exists = players.some(p => p && p.id === playerId)
-
-  if (!exists) {
-    players.push({ id: playerId, name: playerName, online: true })
-  }
-
-  const nextState = {
-    ...state,
-    roomId,
-    players
-  }
-
-  const { error } = await supabase
-    .from('games')
-    .update({ state: nextState })
-    .eq('room_id', roomId)
-    .select()
-
-  if (error) {
-    alert('Erreur rejoindre salon : ' + error.message)
-    return
-  }
-
-  await loadRoom(roomId)
-}
-
-function leaveRoom() {
-  sessionStorage.removeItem('le7_room_id')
-  sessionStorage.setItem('le7_room_paused', '1')
-  if (window.goToMenuScreen) window.goToMenuScreen()
-}
-
-function returnToMenuFromOnline() {
-  if (window.goToMenuScreen) window.goToMenuScreen()
-}
-
-window.createRoom = createRoom
-window.joinRoom = joinRoom
-window.leaveRoom = leaveRoom
-window.returnToMenuFromOnline = returnToMenuFromOnline
-
-const onlineStartBtn = document.getElementById('onlineStartBtn')
-if (onlineStartBtn) {
-  onlineStartBtn.addEventListener('click', () => {
-    alert('Le mode en ligne complet est à reconnecter ensuite, mais créer/rejoindre salon fonctionne.')
-  })
-}
-
-const savedRoomId = sessionStorage.getItem('le7_room_id')
-if (savedRoomId && !sessionStorage.getItem('le7_room_paused')) {
-  loadRoom(savedRoomId)
-}
-</script>
-
-</body>
-</html>
+  const area = document.getEle
